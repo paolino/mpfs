@@ -22,7 +22,7 @@ describe('Submitting transactions we', () => {
         'can create and delete a token 1',
         async () => {
             await withTempDir(async tmpDir => {
-                await withContext(3000, null, null, async context => {
+                await withContext(null, null, async context => {
                     await sync(context);
 
                     const tokenId = await boot(context);
@@ -44,7 +44,7 @@ describe('Submitting transactions we', () => {
     txTest(
         'can create a request',
         async () => {
-            await withContext(3000, null, null, async context => {
+            await withContext(null, null, async context => {
                 await sync(context);
                 const tokenId = await boot(context);
 
@@ -77,7 +77,7 @@ describe('Submitting transactions we', () => {
     txTest(
         'can retract a request',
         async () => {
-            await withContext(3000, null, null, async context => {
+            await withContext(null, null, async context => {
                 await sync(context);
                 const tokenId = await boot(context);
 
@@ -110,7 +110,7 @@ describe('Submitting transactions we', () => {
     txTest(
         'can update a token',
         async () => {
-            await withContext(3000, null, null, async context => {
+            await withContext(null, null, async context => {
                 await sync(context);
                 const tokenId = await boot(context);
 
@@ -150,7 +150,7 @@ describe('Submitting transactions we', () => {
     txTest(
         'can update a token twice tr',
         async () => {
-            await withContext(3000, null, null, async context => {
+            await withContext(null, null, async context => {
                 await sync(context);
                 const tokenId = await boot(context);
 
@@ -199,7 +199,7 @@ describe('Submitting transactions we', () => {
     txTest(
         'can update the token with a batch',
         async () => {
-            await withContext(3000, null, null, async context => {
+            await withContext(null, null, async context => {
                 await sync(context);
                 const tokenId = await boot(context);
 
@@ -258,7 +258,7 @@ describe('Restarting the service', () => {
         async () => {
             const mnemonics = generateMnemonic();
             await withTempDir(async tmpDir => {
-                await withContext(3000, tmpDir, mnemonics, async context1 => {
+                await withContext(tmpDir, mnemonics, async context1 => {
                     await sync(context1);
                     const tokenId = await boot(context1);
                     expect(tokenId).toBeDefined();
@@ -277,7 +277,7 @@ describe('Restarting the service', () => {
                 });
                 await new Promise(resolve => setTimeout(resolve, 5000));
 
-                await withContext(3000, tmpDir, mnemonics, async context2 => {
+                await withContext(tmpDir, mnemonics, async context2 => {
                     await sync(context2);
                     const tokenId = await boot(context2);
                     expect(tokenId).toBeDefined();
@@ -289,8 +289,19 @@ describe('Restarting the service', () => {
         60_000
     );
 });
+
+export const mkWallet = mnemonic => provider =>
+    new MeshWallet({
+        networkId: 0,
+        fetcher: provider,
+        submitter: provider,
+        key: {
+            type: 'mnemonic',
+            words: mnemonic.split(' ')
+        }
+    });
+
 export async function withContext(
-    port: number,
     maybeDatabaseDir: string | null = null,
     maybeMnemonic: string | null = null,
     f
@@ -299,16 +310,6 @@ export async function withContext(
         const databaseDir = maybeDatabaseDir || tmpDirFresh;
         const mnemonic = maybeMnemonic || generateMnemonic();
 
-        const mkWallet = provider =>
-            new MeshWallet({
-                networkId: 0,
-                fetcher: provider,
-                submitter: provider,
-                key: {
-                    type: 'mnemonic',
-                    words: mnemonic.split(' ')
-                }
-            });
         const yaciStorePort = process.env.YACI_STORE_PORT;
         const yaciStorePortNumber = yaciStorePort
             ? parseInt(yaciStorePort, 10)
@@ -324,8 +325,8 @@ export async function withContext(
         const ogmiosPort = process.env.OGMIOS_PORT;
         const ogmiosPortNumber = ogmiosPort ? parseInt(ogmiosPort, 10) : 1337;
 
+        const wallet = mkWallet(mnemonic)(ctxProvider.provider);
         const ogmios = `http://localhost:${ogmiosPortNumber}`;
-        const wallet = mkWallet(ctxProvider.provider);
         await withLevelDB(databaseDir, async db => {
             const tries = await createTrieManager(db);
             const state = await createState(db, tries, 2160);
