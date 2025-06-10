@@ -1,37 +1,20 @@
 import { parseStateDatumCbor } from '../token';
 import { parseRequestCbor, RequestCore } from '../request';
-import { TrieManager } from '../trie';
 import { State } from './state';
 import { RollbackKey } from './state/rollbackkey';
-import { OutputRef } from '../lib';
+import { inputToOutputRef } from '../lib';
 
-export class Process {
-    private state: State;
-    private tries: TrieManager;
-    private address: string;
-    private policyId: string;
+export type Process = (slotNumber: RollbackKey, tx: any) => Promise<void>;
 
-    constructor(
-        state: State,
-        tries: TrieManager,
-        address: string,
-        policyId: string
-    ) {
-        this.state = state;
-        this.tries = tries;
-        this.address = address;
-        this.policyId = policyId;
-    }
-    get trieManager(): TrieManager {
-        return this.tries;
-    }
-    async process(slotNumber: RollbackKey, tx: any): Promise<void> {
-        const minted = tx.mint?.[this.policyId];
+export const createProcess =
+    (state: State, address: string, policyId: string): Process =>
+    async (slotNumber: RollbackKey, tx: any): Promise<void> => {
+        const minted = tx.mint?.[policyId];
         if (minted) {
             for (const asset of Object.keys(minted)) {
                 if (minted[asset] == -1) {
                     // This is a token end request, delete the token state
-                    await this.state.removeToken({
+                    await state.removeToken({
                         slot: slotNumber,
                         value: asset
                     });
@@ -43,33 +26,28 @@ export class Process {
             outputIndex < tx.outputs.length;
             outputIndex++
         ) {
-            const output: {
-                address: string;
-                value: Record<string, any>;
-                datum: any;
-            } = tx.outputs[outputIndex];
-
-            if (output.address !== this.address) {
+            const output = tx.outputs[outputIndex];
+            if (output.address !== address) {
                 break; // skip outputs not to the caging script address
             }
 
-            const asset = output.value[this.policyId];
+            const asset = output.value[policyId];
 
             if (asset) {
                 const tokenId = Object.keys(asset)[0];
                 const tokenState = parseStateDatumCbor(output.datum);
                 if (tokenState) {
-                    const present = await this.state.tokens.getToken(tokenId);
+                    const present = await state.tokens.getToken(tokenId);
 
                     if (present) {
                         for (const input of tx.inputs) {
-                            const ref = Process.inputToOutputRef(input);
+                            const ref = inputToOutputRef(input);
 
-                            const request = await this.state.request(ref);
+                            const request = await state.request(ref);
                             if (!request) {
                                 continue; // skip inputs with no request
                             }
-                            await this.state.updateToken({
+                            await state.updateToken({
                                 slot: slotNumber,
                                 value: {
                                     change: request.core.change,
@@ -87,7 +65,7 @@ export class Process {
                             });
                         }
                     } else {
-                        await this.state.addToken({
+                        await state.addToken({
                             slot: slotNumber,
                             value: {
                                 tokenId,
@@ -116,7 +94,7 @@ export class Process {
                     txHash: tx.id,
                     outputIndex
                 };
-                await this.state.addRequest({
+                await state.addRequest({
                     slot: slotNumber,
                     value: { ref, core: dbRequest }
                 });
@@ -124,16 +102,7 @@ export class Process {
         }
         const inputs = tx.inputs;
         for (const input of inputs) {
-            const ref = Process.inputToOutputRef(input);
-            this.state.removeRequest({ slot: slotNumber, value: ref }); // delete requests from inputs
+            const ref = inputToOutputRef(input);
+            state.removeRequest({ slot: slotNumber, value: ref }); // delete requests from inputs
         }
-    }
-    static inputToOutputRef(input: any): OutputRef {
-        return {
-            txHash: input.transaction.id,
-            outputIndex: input.index
-        };
-    }
-    // get stateManager(): State {
-    //     return this.state;
-}
+    };

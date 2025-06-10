@@ -64,3 +64,10 @@ export function fromHex(hex: string) {
     const buffer = Buffer.from(hex, 'hex');
     return buffer.toString('utf-8');
 }
+
+export const inputToOutputRef = (input: any): OutputRef => {
+    return {
+        txHash: input.transaction.id,
+        outputIndex: input.index
+    };
+};

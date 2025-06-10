@@ -1,11 +1,11 @@
 import WebSocket from 'ws';
 import { Mutex } from 'async-mutex';
-import { Process } from './process';
 import { RollbackKey } from './state/rollbackkey';
 import { samplePowerOfTwoPositions } from './state/intersection';
 import { Checkpoint } from './state/checkpoints';
 import { State } from './state';
-import { read } from 'fs';
+import { inputToOutputRef } from '../lib';
+import { Process } from './process';
 
 const connectWebSocket = async (address: string) => {
     return new Promise<WebSocket>((resolve, reject) => {
@@ -133,7 +133,7 @@ export const createIndexer = async (
     client.findIntersection(intersections);
     client.queryNetworkTip();
     client.reply(async response => {
-        const release = await stop.acquire();
+        const release = await stop.acquire(); // In case we should pause the indexer
         try {
             switch (response.id) {
                 case 'intersection':
@@ -175,12 +175,12 @@ export const createIndexer = async (
                             await state.checkpoints.putCheckpoint(
                                 { slot, blockHash: response.result.block.id },
                                 response.result.block.transactions.flatMap(tx =>
-                                    tx.inputs.map(Process.inputToOutputRef)
+                                    tx.inputs.map(inputToOutputRef)
                                 )
                             );
                             for (const tx of response.result.block
                                 .transactions) {
-                                await process.process(slot, tx);
+                                await process(slot, tx);
                             }
 
                             client.nextBlock();

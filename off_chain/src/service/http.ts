@@ -19,7 +19,7 @@ import { unmkOutputRefId, mkOutputRefId } from '../outputRef';
 import { Level } from 'level';
 import { Token } from '../indexer/state/tokens';
 import { createState } from '../indexer/state';
-import { Process } from '../indexer/process';
+import { createProcess } from '../indexer/process';
 
 // API Endpoints
 function mkAPI(tmp: string, topup: TopUp | undefined, context) {
@@ -276,7 +276,7 @@ export async function withService(
         const state = await createState(db, tries, 2160);
 
         const { address, policyId } = getCagingScript();
-        const process = new Process(state, tries, address, policyId);
+        const process = await createProcess(state, address, policyId);
 
         const indexer = await createIndexer(state, process, ogmios);
         try {

@@ -12,7 +12,7 @@ import { withLevelDB } from '../trie.test';
 import { mkOutputRefId } from '../outputRef';
 import { createTrieManager } from '../trie';
 import { createState } from '../indexer/state';
-import { Process } from '../indexer/process';
+import { createProcess } from '../indexer/process';
 
 const txTest = (name: string, testFn: () => Promise<void>, timeout = 10000) =>
     it(name, { concurrent: true, timeout, retry: 3 }, testFn);
@@ -330,7 +330,7 @@ export async function withContext(
             const tries = await createTrieManager(db);
             const state = await createState(db, tries, 2160);
             const { address, policyId } = getCagingScript();
-            const process = new Process(state, tries, address, policyId);
+            const process = createProcess(state, address, policyId);
 
             const indexer = await createIndexer(state, process, ogmios);
             try {
