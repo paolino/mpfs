@@ -19,7 +19,7 @@ const connectWebSocket = async (address: string) => {
     });
 };
 
-const connect = async (address): Promise<Client> => {
+export const connect = async (address): Promise<Client> => {
     const maxRetries = 1000; // Maximum number of retries
     return await new Promise(async (resolve, reject) => {
         let retries = 0;
@@ -55,7 +55,7 @@ const withTips = (w, f) => {
     }
 };
 
-type Client = {
+export type Client = {
     findIntersection: (points: any[]) => void;
     queryNetworkTip: () => void;
     nextBlock: () => void;
@@ -63,7 +63,7 @@ type Client = {
     close: () => void;
 };
 
-const createClient = (client: WebSocket): Client => {
+export const createClient = (client: WebSocket): Client => {
     const rpc = (method: string, params: any, id: any): void => {
         client.send(
             JSON.stringify({
