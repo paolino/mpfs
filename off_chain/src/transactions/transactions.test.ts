@@ -332,7 +332,11 @@ export async function withContext(
             const { address, policyId } = getCagingScript();
             const process = createProcess(state, address, policyId);
 
-            const indexer = await createIndexer(state, process, ogmios);
+            const indexer = await createIndexer(
+                state.checkpoints,
+                process,
+                ogmios
+            );
             try {
                 const context = await new Context(
                     ctxProvider.provider,

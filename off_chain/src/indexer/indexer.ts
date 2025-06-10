@@ -2,8 +2,7 @@ import WebSocket from 'ws';
 import { Mutex } from 'async-mutex';
 import { RollbackKey } from './state/rollbackkey';
 import { samplePowerOfTwoPositions } from './state/intersection';
-import { Checkpoint } from './state/checkpoints';
-import { State } from './state';
+import { Checkpoint, Checkpoints } from './state/checkpoints';
 import { inputToOutputRef } from '../lib';
 import { Process } from './process';
 
@@ -112,7 +111,7 @@ export type Indexer = {
 };
 
 export const createIndexer = async (
-    state: State,
+    checkpoints: Checkpoints,
     process: Process,
     ogmios: string
 ): Promise<Indexer> => {
@@ -124,9 +123,8 @@ export const createIndexer = async (
     let blockHeight: number | null = null;
     const stop: Mutex = new Mutex();
     const client = await connect(ogmios);
-    const checkpoints: Checkpoint[] =
-        await state.checkpoints.getAllCheckpoints();
-    const sampleCheckpoints = samplePowerOfTwoPositions(checkpoints.reverse());
+    const allPoints: Checkpoint[] = await checkpoints.getAllCheckpoints();
+    const sampleCheckpoints = samplePowerOfTwoPositions(allPoints.reverse());
     const intersections = (
         sampleCheckpoints.map(convertCheckpoint) as any[]
     ).concat(['origin']);
@@ -172,7 +170,7 @@ export const createIndexer = async (
                             const slot = new RollbackKey(
                                 response.result.block.slot
                             );
-                            await state.checkpoints.putCheckpoint(
+                            await checkpoints.putCheckpoint(
                                 { slot, blockHash: response.result.block.id },
                                 response.result.block.transactions.flatMap(tx =>
                                     tx.inputs.map(inputToOutputRef)
@@ -186,8 +184,7 @@ export const createIndexer = async (
                             client.nextBlock();
                             break;
                         case 'backward':
-                            const checkpoints =
-                                await state.checkpoints.getAllCheckpoints();
+                            await checkpoints.getAllCheckpoints();
 
                             client.nextBlock();
                             break;
