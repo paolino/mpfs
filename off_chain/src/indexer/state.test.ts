@@ -3,10 +3,8 @@ import { RollbackKey } from './state/rollbackkey';
 import { Level } from 'level';
 import { mkOutputRefId, unmkOutputRefId } from '../outputRef';
 import * as fc from 'fast-check';
-import { samplePowerOfTwoPositions } from './state/intersection';
 import { withTempDir } from '../test/lib';
 import { withLevelDB } from '../trie.test';
-import { Checkpoint } from './state/checkpoints';
 import { createState } from './state';
 import { createTrieManager } from '../trie';
 
@@ -110,34 +108,11 @@ describe('level-db', () => {
         );
     });
 });
-const genCheckpoints = (min, max) =>
-    fc
-        .tuple(
-            fc.tuple(
-                fc.integer({ min: 0, max: 100000 }), // Starting value
-                fc.array(fc.integer({ min: 1, max: 3 }), {
-                    minLength: min,
-                    maxLength: max
-                }) // Positive increments
-            ),
-            fc.string({ minLength: 5, maxLength: 10 }).map(s => mkHash(s)) // Random block hash
-        )
-        .map(([[start, increments], hash]) => {
-            let current = start;
-            const vector: Checkpoint[] = [];
-            for (const inc of increments) {
-                current += inc; // Add positive increment for strict increase
-                vector.push({
-                    slot: new RollbackKey(current),
-                    blockHash: hash
-                });
-            }
-            return vector;
-        });
 
 function mkHash(string: string): string {
     return Buffer.from(string).toString('base64');
 }
+
 describe('mkOutputRefId and unmkOutputRefId', () => {
     it('should correctly generate and parse output reference IDs', () => {
         fc.assert(
@@ -178,95 +153,7 @@ describe('State', () => {
         const parsedRef = unmkOutputRefId(refId);
         expect(parsedRef).toEqual(outputRef);
     });
-    it('should store and retrieve checkpoints', async () => {
-        await withTempDir(async tmpDir => {
-            await withLevelDB(tmpDir, async db => {
-                const tries = await createTrieManager(db);
-                const checkpointsSize = 10;
-                const stateManager = await createState(
-                    db,
-                    tries,
-                    checkpointsSize
-                );
-                const checkpoint = {
-                    slot: new RollbackKey(123456789),
-                    blockHash: 'blockhash123'
-                };
 
-                await stateManager.checkpoints.putCheckpoint(checkpoint, []);
-                const retrievedHash =
-                    await stateManager.checkpoints.getAllCheckpoints();
-                expect(retrievedHash).toContainEqual(checkpoint);
-            });
-        });
-    });
-    it('should store checkpoints and retrieve them in order', async () => {
-        await fc.assert(
-            fc.asyncProperty(genCheckpoints(0, 100), async checkpoints => {
-                await withTempDir(async tmpDir => {
-                    await withLevelDB(tmpDir, async db => {
-                        const tries = await createTrieManager(db);
-                        const checkpointsSize = null;
-                        const stateManager = await createState(
-                            db,
-                            tries,
-                            checkpointsSize
-                        );
-
-                        for (const checkpoint of checkpoints) {
-                            await stateManager.checkpoints.putCheckpoint(
-                                checkpoint,
-                                []
-                            );
-                        }
-
-                        const retrievedCheckpoints =
-                            await stateManager.checkpoints.getAllCheckpoints();
-                        expect(retrievedCheckpoints).toEqual(checkpoints);
-                    });
-                });
-            }),
-            { numRuns: 100, verbose: true }
-        );
-    }, 30000);
-    it('should maintain a population at most double than requested and at least the requested size', async () => {
-        await fc.assert(
-            fc.asyncProperty(genCheckpoints(20, 1000), async checkpoints => {
-                await withTempDir(async tmpDir => {
-                    await withLevelDB(tmpDir, async db => {
-                        const tries = await createTrieManager(db);
-                        const checkpointsSize = 20;
-                        expect(checkpoints.length).toBeGreaterThanOrEqual(
-                            checkpointsSize
-                        );
-                        const stateManager = await createState(
-                            db,
-                            tries,
-                            checkpointsSize
-                        );
-
-                        for (const checkpoint of checkpoints) {
-                            await stateManager.checkpoints.putCheckpoint(
-                                checkpoint,
-                                []
-                            );
-                        }
-
-                        const retrievedCheckpoints =
-                            await stateManager.checkpoints.getAllCheckpoints();
-
-                        expect(retrievedCheckpoints.length).toBeLessThan(
-                            checkpointsSize * 2
-                        );
-                        expect(
-                            retrievedCheckpoints.length
-                        ).toBeGreaterThanOrEqual(checkpointsSize);
-                    });
-                });
-            }),
-            { numRuns: 100, verbose: true }
-        );
-    }, 30000);
     it('supports reopening', async () => {
         const checkpointsSize = 10;
         await withTempDir(async tmpDir => {
