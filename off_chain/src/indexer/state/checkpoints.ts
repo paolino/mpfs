@@ -1,5 +1,6 @@
 import { AbstractSublevel } from 'abstract-level';
 import { RollbackKey } from './rollbackkey';
+import { samplePowerOfTwoPositions } from './intersection';
 
 export type Checkpoint = {
     slot: RollbackKey;
@@ -20,6 +21,7 @@ export type Checkpoints = {
     getCheckpoint(slot: RollbackKey): Promise<BlockHash | undefined>;
     getAllCheckpoints(): Promise<Checkpoint[]>;
     extractCheckpointsAfter(cp: Checkpoint | null): Promise<CheckpointValue[]>;
+    getIntersections(): Promise<Checkpoint[]>;
     close(): Promise<void>;
 };
 
@@ -54,6 +56,16 @@ export const createCheckpoints = async (
             count--;
         }
     };
+    const all = async () => {
+        const checkpoints: Checkpoint[] = [];
+        for await (const [key, value] of db.iterator()) {
+            checkpoints.push({
+                slot: RollbackKey.fromKey(key),
+                blockHash: value.blockHash
+            });
+        }
+        return checkpoints;
+    };
     return {
         putCheckpoint: async (
             checkpoint: Checkpoint,
@@ -70,15 +82,10 @@ export const createCheckpoints = async (
             const value = await db.get(slot.key);
             return value?.blockHash;
         },
-        getAllCheckpoints: async () => {
-            const checkpoints: Checkpoint[] = [];
-            for await (const [key, value] of db.iterator()) {
-                checkpoints.push({
-                    slot: RollbackKey.fromKey(key),
-                    blockHash: value.blockHash
-                });
-            }
-            return checkpoints;
+        getAllCheckpoints: all,
+        getIntersections: async () => {
+            const allPoints = await all();
+            return samplePowerOfTwoPositions(allPoints.reverse());
         },
         extractCheckpointsAfter: async (cp: Checkpoint | null) => {
             const checkpoints: CheckpointValue[] = [];

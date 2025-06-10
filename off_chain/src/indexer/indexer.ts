@@ -1,7 +1,6 @@
 import WebSocket from 'ws';
 import { Mutex } from 'async-mutex';
 import { RollbackKey } from './state/rollbackkey';
-import { samplePowerOfTwoPositions } from './state/intersection';
 import { Checkpoint, Checkpoints } from './state/checkpoints';
 import { inputToOutputRef } from '../lib';
 import { Process } from './process';
@@ -123,8 +122,7 @@ export const createIndexer = async (
     let blockHeight: number | null = null;
     const stop: Mutex = new Mutex();
     const client = await connect(ogmios);
-    const allPoints: Checkpoint[] = await checkpoints.getAllCheckpoints();
-    const sampleCheckpoints = samplePowerOfTwoPositions(allPoints.reverse());
+    const sampleCheckpoints = await checkpoints.getIntersections();
     const intersections = (
         sampleCheckpoints.map(convertCheckpoint) as any[]
     ).concat(['origin']);
