@@ -157,3 +157,18 @@ export const createTrieManager = async (
         }
     };
 };
+
+export const withTrieManager = async (
+    parent: Level<string, any>,
+    f: (manager: TrieManager) => Promise<void>
+): Promise<void> => {
+    const manager = await createTrieManager(parent);
+    try {
+        await f(manager);
+    } catch (error) {
+        console.error('Error during TrieManager operation:', error);
+        throw error;
+    } finally {
+        await manager.close();
+    }
+};

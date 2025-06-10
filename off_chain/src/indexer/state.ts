@@ -186,3 +186,17 @@ export const createState = async (
         }
     };
 };
+
+export const withState = async (
+    parent: Level<string, any>,
+    tries: TrieManager,
+    checkpointsSize: number | null = null,
+    f: (state: State) => Promise<void>
+): Promise<void> => {
+    const state = await createState(parent, tries, checkpointsSize);
+    try {
+        await f(state);
+    } finally {
+        await state.close();
+    }
+};

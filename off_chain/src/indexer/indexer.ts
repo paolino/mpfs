@@ -276,3 +276,17 @@ const reconvertCheckpoint = (wsCheckpoint: WsCheckpoint): Checkpoint => {
         blockHash: wsCheckpoint.id
     };
 };
+
+export const withIndexer = async (
+    checkpoints: Checkpoints,
+    process: Process,
+    ogmios: string,
+    f: (indexer: Indexer) => Promise<void>
+): Promise<void> => {
+    const indexer = await createIndexer(checkpoints, process, ogmios);
+    try {
+        await f(indexer);
+    } finally {
+        await indexer.close();
+    }
+};
