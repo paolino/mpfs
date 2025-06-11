@@ -13,6 +13,7 @@ import { mkOutputRefId } from '../outputRef';
 import { createTrieManager } from '../trie';
 import { createState } from '../indexer/state';
 import { createProcess } from '../indexer/process';
+import { sleep, sleepMs } from '../lib';
 
 const txTest = (name: string, testFn: () => Promise<void>, timeout = 10000) =>
     it(name, { concurrent: true, timeout, retry: 3 }, testFn);
@@ -275,7 +276,7 @@ describe('Restarting the service', () => {
                     await sync(context1);
                     await end(context1, tokenId);
                 });
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                await sleep(5);
 
                 await withContext(tmpDir, mnemonics, async context2 => {
                     await sync(context2);
@@ -356,16 +357,14 @@ export async function withContext(
                             await ctxProvider.topup(walletAddress, 10_000);
                             break;
                         } catch (error) {
-                            await new Promise(resolve =>
-                                setTimeout(resolve, 5000 * Math.random() + 1)
-                            );
+                            await sleepMs(5000 * Math.random());
                         }
                     }
                     await f(context);
                 }
             } finally {
                 await indexer.close();
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await sleep(1);
                 await state.close();
                 await tries.close();
             }

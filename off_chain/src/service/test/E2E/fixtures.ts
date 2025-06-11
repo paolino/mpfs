@@ -5,7 +5,7 @@ import { generateMnemonic, MeshWallet } from '@meshsdk/core';
 import { walletTopup } from '../E2E/client';
 import { it, test } from 'vitest';
 import { withTempDir } from '../../../test/lib';
-import { validatePort } from '../../../lib';
+import { sleepMs, validatePort } from '../../../lib';
 
 function newWallet(provider: Provider) {
     const seed = crypto.getRandomValues(new Uint32Array(4)).join('');
@@ -91,9 +91,7 @@ export async function withRunner(test) {
                             if (attempt === retries) {
                                 throw error;
                             }
-                            await new Promise(resolve =>
-                                setTimeout(resolve, delay)
-                            );
+                            await sleepMs(delay);
                         }
                     }
                 };

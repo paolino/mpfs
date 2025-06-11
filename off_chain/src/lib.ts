@@ -71,3 +71,11 @@ export const inputToOutputRef = (input: any): OutputRef => {
         outputIndex: input.index
     };
 };
+
+export const sleepMs = (ms: number): Promise<void> => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+export const sleep = (seconds: number): Promise<void> => {
+    return sleepMs(seconds * 1000);
+};

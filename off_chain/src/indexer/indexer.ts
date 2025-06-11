@@ -2,7 +2,7 @@ import WebSocket from 'ws';
 import { Mutex } from 'async-mutex';
 import { RollbackKey } from './state/rollbackkey';
 import { Checkpoint, Checkpoints } from './state/checkpoints';
-import { inputToOutputRef } from '../lib';
+import { inputToOutputRef, sleepMs } from '../lib';
 import { Process } from './process';
 
 const connectWebSocket = async (address: string) => {
@@ -34,9 +34,7 @@ export const connect = async (address): Promise<Client> => {
                         retries + 1
                     }/${maxRetries})...`
                 );
-                await new Promise(resolve =>
-                    setTimeout(resolve, 1000 * retries)
-                );
+                await sleepMs(1000 * retries);
             }
         }
         if (retries === maxRetries) {
@@ -198,9 +196,7 @@ export const createIndexer = async (
     const tips = async () => {
         checkingReadiness = true;
         client.queryNetworkTip();
-        while (checkingReadiness) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
+        while (checkingReadiness) await sleepMs(100);
         return {
             ready,
             networkTip: networkTip,

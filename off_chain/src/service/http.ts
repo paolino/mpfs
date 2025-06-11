@@ -20,6 +20,7 @@ import { Level } from 'level';
 import { Token } from '../indexer/state/tokens';
 import { createState } from '../indexer/state';
 import { createProcess } from '../indexer/process';
+import { sleep } from '../lib';
 
 // API Endpoints
 function mkAPI(tmp: string, topup: TopUp | undefined, context) {
@@ -301,7 +302,7 @@ export async function withService(
             }
         } finally {
             await indexer.close();
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await sleep(1);
             await state.close();
             await tries.close();
         }
