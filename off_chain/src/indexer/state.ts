@@ -5,7 +5,7 @@ import { TrieManager } from '../trie';
 import { mkOutputRefId } from '../outputRef';
 import { CurrentToken } from '../token';
 import { Checkpoints, createCheckpoints } from './state/checkpoints';
-import { createRollbacks } from './state/rollbacks';
+import { createRollbacks, Rollbacks } from './state/rollbacks';
 import { createTokens, Token, Tokens } from './state/tokens';
 import { createRequests, Requests } from './state/requests';
 import { Request } from '../request';
@@ -33,6 +33,7 @@ export type State = {
     tokens: Tokens;
     requests: Requests;
     checkpoints: Checkpoints;
+    rollbacks: Rollbacks;
     close: () => Promise<void>;
 };
 
@@ -67,6 +68,7 @@ export const createState = async (
         tokens,
         requests,
         checkpoints,
+        rollbacks,
         request: async (outputRef: OutputRef): Promise<Request | undefined> => {
             const requestCore = await requests.get(mkOutputRefId(outputRef));
             if (!requestCore) {
@@ -141,45 +143,57 @@ export const createState = async (
         },
         rollback: async (slot: RollbackKey): Promise<void> => {
             const rollbackSteps = await rollbacks.extractAfter(slot);
-            for (const rollbackStep of rollbackSteps) {
-                for (const rollback of rollbackStep) {
-                    switch (rollback.type) {
-                        case 'RemoveRequest': {
-                            const request = rollback.request;
-                            await requests.delete(request);
-                            break;
-                        }
-                        case 'AddRequest': {
-                            const { ref, request } = rollback;
-                            await requests.put(ref, request);
-                            break;
-                        }
-                        case 'RemoveToken': {
-                            const tokenId = rollback.tokenId;
-                            await tokens.deleteToken(tokenId);
-                            await tries.unhide(tokenId);
-                            break;
-                        }
-                        case 'AddToken': {
-                            const { tokenId, token } = rollback;
-                            await tokens.putToken(tokenId, token);
-                            await tries.delete(tokenId);
-                            break;
-                        }
-                        case 'UpdateToken': {
-                            const { tokenChange } = rollback;
-                            await tries.trie(
-                                tokenChange.tokenId,
-                                async trie => {
-                                    await trie.update(tokenChange.change);
-                                }
-                            );
-                            await tokens.putToken(
-                                tokenChange.tokenId,
-                                tokenChange.current
-                            );
-                            break;
-                        }
+            for (const rollback of rollbackSteps) {
+                switch (rollback.type) {
+                    case 'RemoveRequest': {
+                        const request = rollback.request;
+                        console.log(
+                            `Rolling back add request for ${JSON.stringify(
+                                request
+                            )}`
+                        );
+                        await requests.delete(request);
+                        break;
+                    }
+                    case 'AddRequest': {
+                        const { ref, request } = rollback;
+                        console.log(
+                            `Rolling back remove request for ${JSON.stringify(
+                                ref
+                            )} with core ${JSON.stringify(request)}`
+                        );
+                        await requests.put(mkOutputRefId(ref), request);
+                        break;
+                    }
+                    case 'RemoveToken': {
+                        const tokenId = rollback.tokenId;
+                        console.log(`Rolling back add token for ${tokenId}`);
+                        await tokens.deleteToken(tokenId);
+                        await tries.delete(tokenId);
+                        break;
+                    }
+                    case 'AddToken': {
+                        const { tokenId, token } = rollback;
+                        console.log(
+                            `Rolling back remove token for ${tokenId} with token ${JSON.stringify(token)}`
+                        );
+                        await tokens.putToken(tokenId, token);
+                        await tries.unhide(tokenId);
+                        break;
+                    }
+                    case 'UpdateToken': {
+                        const { tokenChange } = rollback;
+                        console.log(
+                            `Rolling back token update for ${JSON.stringify(tokenChange)}`
+                        );
+                        await tries.trie(tokenChange.tokenId, async trie => {
+                            await trie.update(tokenChange.change);
+                        });
+                        await tokens.putToken(
+                            tokenChange.tokenId,
+                            tokenChange.current
+                        );
+                        break;
                     }
                 }
             }

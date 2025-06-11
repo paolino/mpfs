@@ -12,6 +12,9 @@ export async function withLevelDB(
     const db = new Level(tmpDir, { valueEncoding: 'json' });
     try {
         await callback(db);
+    } catch (error) {
+        console.error('Error during LevelDB operation:', error);
+        throw error;
     } finally {
         await db.close();
     }

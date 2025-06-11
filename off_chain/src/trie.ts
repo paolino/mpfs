@@ -141,12 +141,6 @@ export const createTrieManager = async (
         },
         delete: async (tokenId: string) => {
             await withLock(lock, async () => {
-                const stashableTrie = tries[tokenId].get();
-                if (!stashableTrie) {
-                    throw new Error(
-                        `Trie for token ID ${tokenId} does not exist or it's hidden`
-                    );
-                }
                 await managerDB.del(tokenId);
                 delete tries[tokenId];
                 // bad performance
