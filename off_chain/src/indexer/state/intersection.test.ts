@@ -50,7 +50,7 @@ describe('Power of 2 indices selection', () => {
     });
 });
 
-const generateStrictlyIncreasingArray = minLength =>
+export const generateStrictlyIncreasingArray = minLength =>
     fc
         .tuple(
             fc.integer({ min: 0, max: 100000 }), // Starting value

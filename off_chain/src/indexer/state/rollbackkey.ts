@@ -25,3 +25,28 @@ export class RollbackKey extends Number {
         return new RollbackKey(0);
     }
 }
+
+class AccountC {
+    private _balance: number;
+    constructor(initialBalance: number = 0) {
+        this._balance = initialBalance;
+    }
+    get balance(): number {
+        return this._balance;
+    }
+    deposit(amount: number): void {
+        if (amount < 0) {
+            throw new Error('Deposit amount must be non-negative');
+        }
+        this._balance += amount;
+    }
+    withdraw(amount: number): void {
+        if (amount < 0) {
+            throw new Error('Withdrawal amount must be non-negative');
+        }
+        if (amount > this._balance) {
+            throw new Error('Insufficient funds for withdrawal');
+        }
+        this._balance -= amount;
+    }
+}

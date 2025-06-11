@@ -23,7 +23,7 @@ export type Rollbacks = {
      * @param rollbackKey - The slot number to extract changes after.
      * @returns An array of rollbacks with their slot and changes.
      */
-    extractAfter(rollbackKey: RollbackKey): Promise<RollbackValue[]>;
+    extractAfter(rollbackKey: RollbackKey | null): Promise<RollbackValue>;
     /**
      * Prunes all rollbacks before a given rollback key.
      * @param rollbackKey - The slot number to prune rollbacks before.
@@ -63,14 +63,19 @@ export const createRollbacks = async (
         },
 
         extractAfter: async (
-            rollbackKey: RollbackKey
-        ): Promise<RollbackValue[]> => {
-            const results: RollbackValue[] = [];
-            const iterator = rollbackStore.iterator({
-                gt: rollbackKey.key
-            });
+            rollbackKey: RollbackKey | null
+        ): Promise<RollbackValue> => {
+            const results: RollbackValue = [];
+            let iterator;
+            if (!rollbackKey) {
+                iterator = rollbackStore.iterator();
+            } else {
+                iterator = rollbackStore.iterator({
+                    gt: rollbackKey.key
+                });
+            }
             for await (const [key, value] of iterator) {
-                results.push(value.reverse());
+                results.push(...value);
                 await rollbackStore.del(key);
             }
 
