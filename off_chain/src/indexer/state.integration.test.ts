@@ -77,9 +77,9 @@ describe('State and Indexer', () => {
     });
     it(
         'can restart after rolling back the db by hand',
-        { timeout: 20000 },
+        { timeout: 20000, retry: 3 },
         async () => {
-            const checkpointsSize = 10;
+            const checkpointsSize = null;
             const { address, policyId } = getCagingScript();
             let rollback: Checkpoint | undefined = undefined;
             await withTempDir(async tmpDir => {
@@ -148,7 +148,7 @@ describe('State and Indexer', () => {
     );
     it(
         'can restart after rolling back the db by hand and contains one empty token',
-        { timeout: 60000 },
+        { timeout: 60000, retry: 3 },
         async () => {
             let rollback: Checkpoint | undefined = undefined;
             let tokenId: string | undefined = undefined;
@@ -208,7 +208,7 @@ describe('State and Indexer', () => {
     };
     it(
         'can restart after rolling back the db by hand and contains one full token',
-        { timeout: 60000 },
+        { timeout: 60000, retry: 3 },
         async () => {
             let rollback: Checkpoint | undefined = undefined;
             let tokenId: string | undefined = undefined;

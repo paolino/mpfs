@@ -24,9 +24,9 @@ jobs:
           aiken build
       - name: Set up E2E environment
         run: |
-          curl -L https://github.com/bloxbean/yaci-devkit/releases/download/v0.10.5/yaci-cli-0.10.5-linux-X64.zip -o yaci-cli-0.10.5-linux-X64.zip
-          unzip yaci-cli-0.10.5-linux-X64.zip
-          cd yaci-cli-0.10.5
+          curl -L https://github.com/bloxbean/yaci-devkit/releases/download/v0.10.6/yaci-cli-0.10.6-linux-X64.zip -o yaci-cli-0.10.6-linux-X64.zip
+          unzip yaci-cli-0.10.6-linux-X64.zip
+          cd yaci-cli-0.10.6
           ./yaci-cli up --enable-yaci-store > /dev/null &
       - name: Set up javascript environment
         uses: actions/setup-node@v3
@@ -36,10 +36,18 @@ jobs:
         run: |
           cd off_chain
           npm install
-      - name: Run E2E tests
+      - name: Install just
         run: |
-          cd off_chain
+          sudo apt update
+          sudo apt install -y just
+      - name: Run tests
+        run: |
+          just wait_for_service "yaci-store" 8080
+          just wait_for_service "yaci-admin" 10000
+          just wait_for_service "ogmios" 1337
           export YACI_STORE_PORT=8080
           export YACI_ADMIN_PORT=10000
-          sleep 10
-          npx tsx service/test/E2E.ts
+          export OGMIOS_PORT=1337
+          cd off_chain
+          npx ava
+          npx vitest --fileParallelism=false run
