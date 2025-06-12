@@ -34,7 +34,7 @@ describe('State and Indexer', () => {
                 );
                 const process = createProcess(stateManager, address, policyId);
                 const indexer = await createIndexer(
-                    stateManager.checkpoints,
+                    stateManager,
                     process,
                     'http://localhost:1337'
                 );
@@ -58,7 +58,7 @@ describe('State and Indexer', () => {
                 const process = createProcess(reopenedState, address, policyId);
 
                 const indexer = await createIndexer(
-                    reopenedState.checkpoints,
+                    reopenedState,
                     process,
                     'http://localhost:1337'
                 );
@@ -98,7 +98,7 @@ describe('State and Indexer', () => {
                         policyId
                     );
                     const indexer = await createIndexer(
-                        stateManager.checkpoints,
+                        stateManager,
                         process,
                         'http://localhost:1337'
                     );
@@ -128,7 +128,7 @@ describe('State and Indexer', () => {
                     );
 
                     const indexer = await createIndexer(
-                        reopenedState.checkpoints,
+                        reopenedState,
                         process,
                         'http://localhost:1337'
                     );
@@ -335,7 +335,7 @@ const withSetup = async (
             await withState(db, tries, checkpointsSize, async state => {
                 const process = createProcess(state, address, policyId);
                 await withIndexer(
-                    state.checkpoints,
+                    state,
                     process,
                     'http://localhost:1337',
                     async indexer => {

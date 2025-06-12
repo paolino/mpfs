@@ -335,7 +335,7 @@ export async function withContext(
             const process = createProcess(state, address, policyId);
 
             const indexer = await createIndexer(
-                state.checkpoints,
+                state,
                 process,
                 ogmios
             );

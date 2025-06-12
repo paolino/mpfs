@@ -4,6 +4,7 @@ import { RollbackKey } from './state/rollbackkey';
 import { Checkpoints } from './state/checkpoints';
 import { inputToOutputRef, sleepMs } from '../lib';
 import { Process } from './process';
+import { State } from './state';
 
 const connectWebSocket = async (address: string) => {
     return new Promise<WebSocket>((resolve, reject) => {
@@ -107,8 +108,13 @@ export type Indexer = {
     close: () => Promise<void>;
 };
 
+const intersect = async (client: Client, checkpoints: Checkpoints) => {
+    const intersections = await checkpoints.getIntersections();
+    client.findIntersection(intersections);
+};
+
 export const createIndexer = async (
-    checkpoints: Checkpoints,
+    state: State,
     process: Process,
     ogmios: string
 ): Promise<Indexer> => {
@@ -120,11 +126,8 @@ export const createIndexer = async (
     let blockHeight: number | null = null;
     const stop: Mutex = new Mutex();
     const client = await connect(ogmios);
-    const sampleCheckpoints = await checkpoints.getIntersections();
-    const intersections = (
-        sampleCheckpoints.map(convertCheckpoint) as any[]
-    ).concat(['origin']);
-    client.findIntersection(intersections);
+    const checkpoints = state.checkpoints;
+    await intersect(client, checkpoints);
     client.queryNetworkTip();
     client.reply(async response => {
         const release = await stop.acquire(); // In case we should pause the indexer
