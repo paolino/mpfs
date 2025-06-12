@@ -103,6 +103,7 @@ export const createState = async (
         addToken: async (token: Slotted<Token>): Promise<void> => {
             const { slot, value } = token;
             await tokens.putToken(value.tokenId, value.current);
+            await tries.trie(value.tokenId, async trie => {});
             await rollbacks.put(slot, {
                 type: 'RemoveToken',
                 tokenId: value.tokenId
