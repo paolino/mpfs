@@ -61,6 +61,16 @@ const appendTokenId = async (managerDB, tokenId: string): Promise<void> => {
     ]);
 };
 
+const markTokenIdAs = async (
+    managerDB,
+    tokenId: string,
+    visible: boolean
+): Promise<void> => {
+    await updateTokenIds(managerDB, ids =>
+        ids.map(id => (id.tokenId === tokenId ? { ...id, visible } : id))
+    );
+};
+
 export const createTrieManager = async (
     parent: Level<string, any>
 ): Promise<TrieManager> => {
@@ -114,11 +124,13 @@ export const createTrieManager = async (
             tries = {};
         },
         hide: async (tokenId: string) => {
+            await markTokenIdAs(managerDB, tokenId, false);
             await withLock(lock, async () => {
                 tries[tokenId]?.hide();
             });
         },
         unhide: async (tokenId: string) => {
+            await markTokenIdAs(managerDB, tokenId, true);
             await withLock(lock, async () => {
                 tries[tokenId]?.unhide();
             });

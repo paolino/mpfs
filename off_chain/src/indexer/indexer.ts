@@ -264,13 +264,6 @@ const convertCheckpoint = (checkpoint: Checkpoint): WsCheckpoint => {
     };
 };
 
-const reconvertCheckpoint = (wsCheckpoint: WsCheckpoint): Checkpoint => {
-    return {
-        slot: new RollbackKey(wsCheckpoint.slot),
-        blockHash: wsCheckpoint.id
-    };
-};
-
 export const withIndexer = async (
     checkpoints: Checkpoints,
     process: Process,

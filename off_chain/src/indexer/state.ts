@@ -142,51 +142,35 @@ export const createState = async (
                 });
             }
         },
-        rollback: async (slot: RollbackKey): Promise<void> => {
+        rollback: async (slot: RollbackKey | null): Promise<void> => {
+            await checkpoints.rollback(slot);
             const rollbackSteps = await rollbacks.extractAfter(slot);
             for (const rollback of rollbackSteps) {
                 switch (rollback.type) {
                     case 'RemoveRequest': {
                         const request = rollback.request;
-                        console.log(
-                            `Rolling back add request for ${JSON.stringify(
-                                request
-                            )}`
-                        );
                         await requests.delete(request);
                         break;
                     }
                     case 'AddRequest': {
                         const { ref, request } = rollback;
-                        console.log(
-                            `Rolling back remove request for ${JSON.stringify(
-                                ref
-                            )} with core ${JSON.stringify(request)}`
-                        );
                         await requests.put(mkOutputRefId(ref), request);
                         break;
                     }
                     case 'RemoveToken': {
                         const tokenId = rollback.tokenId;
-                        console.log(`Rolling back add token for ${tokenId}`);
                         await tokens.deleteToken(tokenId);
                         await tries.delete(tokenId);
                         break;
                     }
                     case 'AddToken': {
                         const { tokenId, token } = rollback;
-                        console.log(
-                            `Rolling back remove token for ${tokenId} with token ${JSON.stringify(token)}`
-                        );
                         await tokens.putToken(tokenId, token);
                         await tries.unhide(tokenId);
                         break;
                     }
                     case 'UpdateToken': {
                         const { tokenChange } = rollback;
-                        console.log(
-                            `Rolling back token update for ${JSON.stringify(tokenChange)}`
-                        );
                         await tries.trie(tokenChange.tokenId, async trie => {
                             await trie.update(tokenChange.change);
                         });
