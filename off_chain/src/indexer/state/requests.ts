@@ -1,6 +1,7 @@
 import { RequestCore } from '../../request';
 import { Change } from '../../trie/change';
 import { AbstractSublevel } from 'abstract-level';
+import { levelHash } from '../level-hash';
 
 export type Requests = {
     get(outputRef: string): Promise<RequestCore | undefined>;
@@ -10,6 +11,7 @@ export type Requests = {
         tokenId: string | null
     ): Promise<{ outputRef: string; change: Change; owner: string }[]>;
     close(): Promise<void>;
+    hash(): Promise<string>;
 };
 
 export async function createRequests(
@@ -51,6 +53,9 @@ export async function createRequests(
         },
         close: async (): Promise<void> => {
             await requestStore.close();
+        },
+        hash: async (): Promise<string> => {
+            return await levelHash(requestStore);
         }
     };
 }

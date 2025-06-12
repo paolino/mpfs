@@ -1,5 +1,6 @@
 import { AbstractSublevel } from 'abstract-level';
 import { RollbackKey } from './rollbackkey';
+import { levelHash } from '../level-hash';
 
 export type RollbackValue = any[];
 
@@ -29,6 +30,12 @@ export type Rollbacks = {
      * @param rollbackKey - The slot number to prune rollbacks before.
      */
     pruneBefore(rollbackKey: RollbackKey): Promise<void>;
+
+    hash(): Promise<string>;
+    /**
+     * Closes the rollback store.
+     * @returns A promise that resolves when the store is closed.
+     */
     close(): Promise<void>;
 };
 
@@ -92,6 +99,9 @@ export const createRollbacks = async (
             for await (const [key] of iterator) {
                 await rollbackStore.del(key);
             }
+        },
+        hash: async (): Promise<string> => {
+            return await levelHash(rollbackStore);
         }
     };
 };

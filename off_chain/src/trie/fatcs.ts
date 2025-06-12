@@ -1,4 +1,5 @@
 import { AbstractSublevel } from 'abstract-level';
+import { levelHash } from '../indexer/level-hash';
 
 export type Facts = {
     set(key: string, value: string): Promise<void>;
@@ -6,6 +7,7 @@ export type Facts = {
     getAll(): Promise<Record<string, string>>;
     delete(key: string): Promise<void>;
     close(): Promise<void>;
+    hash(): Promise<string>;
 };
 
 export const createFacts = async (
@@ -36,6 +38,9 @@ export const createFacts = async (
 
         async close(): Promise<void> {
             await db.close();
+        },
+        async hash(): Promise<string> {
+            return await levelHash(db);
         }
     };
 };

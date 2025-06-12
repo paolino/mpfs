@@ -1,5 +1,6 @@
 import { CurrentToken, TokenState } from '../../token';
 import { AbstractSublevel } from 'abstract-level';
+import { levelHash } from '../level-hash';
 
 export type Token = {
     current: CurrentToken;
@@ -12,6 +13,7 @@ export type Tokens = {
     deleteToken(tokenId: string): Promise<void>;
     getTokens(): Promise<Token[]>;
     close(): Promise<void>;
+    hash(): Promise<string>;
 };
 
 export const createTokens = async (
@@ -46,6 +48,9 @@ export const createTokens = async (
         },
         close: async (): Promise<void> => {
             await tokenStore.close();
+        },
+        hash: async (): Promise<string> => {
+            return await levelHash(tokenStore);
         }
     };
 };

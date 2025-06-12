@@ -1,6 +1,7 @@
 import { AbstractSublevel } from 'abstract-level';
 import { RollbackKey } from './rollbackkey';
 import { samplePowerOfTwoPositions } from './intersection';
+import { levelHash } from '../level-hash';
 
 export type Checkpoint = {
     slot: RollbackKey;
@@ -22,6 +23,7 @@ export type Checkpoints = {
     getAllCheckpoints(): Promise<Checkpoint[]>;
     extractCheckpointsAfter(cp: Checkpoint | null): Promise<CheckpointValue[]>;
     getIntersections(): Promise<Checkpoint[]>;
+    hash(): Promise<string>;
     close(): Promise<void>;
 };
 
@@ -103,6 +105,9 @@ export const createCheckpoints = async (
             } catch (error) {
                 console.error('Error closing Checkpoints:', error);
             }
+        },
+        hash: async () => {
+            return await levelHash(db);
         }
     };
 };
