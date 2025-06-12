@@ -1,6 +1,7 @@
 import { AbstractSublevel } from 'abstract-level';
 import { RollbackKey } from './rollbackkey';
 import { levelHash } from '../level-hash';
+import { WithOrigin } from '../../lib';
 
 export type RollbackValue = any[];
 
@@ -24,7 +25,7 @@ export type Rollbacks = {
      * @param rollbackKey - The slot number to extract changes after.
      * @returns An array of rollbacks with their slot and changes.
      */
-    extractAfter(rollbackKey: RollbackKey | null): Promise<RollbackValue>;
+    extractAfter(rollbackKey: WithOrigin<RollbackKey>): Promise<RollbackValue>;
     /**
      * Prunes all rollbacks before a given rollback key.
      * @param rollbackKey - The slot number to prune rollbacks before.
@@ -70,11 +71,11 @@ export const createRollbacks = async (
         },
 
         extractAfter: async (
-            rollbackKey: RollbackKey | null
+            rollbackKey: WithOrigin<RollbackKey>
         ): Promise<RollbackValue> => {
             const results: RollbackValue = [];
             let iterator;
-            if (!rollbackKey) {
+            if (rollbackKey === 'origin') {
                 iterator = rollbackStore.iterator();
             } else {
                 iterator = rollbackStore.iterator({

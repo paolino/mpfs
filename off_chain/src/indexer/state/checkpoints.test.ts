@@ -27,7 +27,7 @@ const genCheckpoints = (min, max) =>
                 current += inc; // Add positive increment for strict increase
                 vector.push({
                     slot: new RollbackKey(current),
-                    blockHash: hash
+                    id: hash
                 });
             }
             return vector;
@@ -45,7 +45,7 @@ describe('Checkpoints db', () => {
                 );
                 const checkpoint = {
                     slot: new RollbackKey(123456789),
-                    blockHash: 'blockhash123'
+                    id: 'blockhash123'
                 };
 
                 await checkpoints.putCheckpoint(checkpoint, []);

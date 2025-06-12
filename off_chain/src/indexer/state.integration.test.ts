@@ -6,22 +6,24 @@ import { createTrieManager, TrieManager, withTrieManager } from '../trie';
 import { createProcess } from './process';
 import { Context, getCagingScript, yaciProvider } from '../context';
 import { createIndexer, withIndexer, Indexer } from './indexer';
-import { Checkpoint } from './state/checkpoints';
+import {
+    Checkpoint,
+    checkpointWithOriginGreaterThan
+} from './state/checkpoints';
 import { generateMnemonic } from 'bip39';
 import { mkWallet } from '../transactions/transactions.test';
 import { boot } from '../transactions/boot';
 import { request } from '../transactions/request';
 import { update } from '../transactions/update';
-import { nullHash, sleep, sleepMs } from '../lib';
+import { nullHash, sleep, sleepMs, WithOrigin } from '../lib';
 import { end } from '../transactions/end';
 import { Level } from 'level';
-import { levelHash } from './level-hash';
 
 describe('State and Indexer', () => {
     it('can restart with indexer', { timeout: 20000 }, async () => {
         const checkpointsSize = 10;
         const { address, policyId } = getCagingScript();
-        let last: Checkpoint | undefined = undefined;
+        let last: WithOrigin<Checkpoint> = 'origin';
         await withTempDir(async tmpDir => {
             await withLevelDB(tmpDir, async db => {
                 const tries = await createTrieManager(db);
@@ -67,9 +69,9 @@ describe('State and Indexer', () => {
                 expect(finalPoints).toContainEqual(last);
                 const intersections =
                     await reopenedState.checkpoints.getIntersections();
-                expect(intersections[0].slot.value).toBeGreaterThan(
-                    last!.slot.value
-                );
+                expect(
+                    checkpointWithOriginGreaterThan(intersections[0], last)
+                ).toBe(true);
 
                 await reopenedState.close();
             });
@@ -81,7 +83,7 @@ describe('State and Indexer', () => {
         async () => {
             const checkpointsSize = null;
             const { address, policyId } = getCagingScript();
-            let rollback: Checkpoint | undefined = undefined;
+            let rollback: WithOrigin<Checkpoint> = 'origin';
             await withTempDir(async tmpDir => {
                 await withLevelDB(tmpDir, async db => {
                     const tries = await createTrieManager(db);
@@ -137,9 +139,12 @@ describe('State and Indexer', () => {
                     expect(finalPoints).toContainEqual(rollback);
                     const intersections =
                         await reopenedState.checkpoints.getIntersections();
-                    expect(intersections[0].slot.value).toBeGreaterThan(
-                        rollback!.slot.value
-                    );
+                    expect(
+                        checkpointWithOriginGreaterThan(
+                            intersections[0],
+                            rollback
+                        )
+                    ).toBe(true);
 
                     await reopenedState.close();
                 });

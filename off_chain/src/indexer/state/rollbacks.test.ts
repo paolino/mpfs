@@ -123,7 +123,7 @@ describe('Rollbacks db', async () => {
                         }
                         await rollbacks.pruneBefore(new RollbackKey(prune));
                         const extracted = await rollbacks.extractAfter(
-                            extract < 0 ? null : new RollbackKey(extract)
+                            extract < 0 ? 'origin' : new RollbackKey(extract)
                         );
                         if (extract < prune) {
                             expect(extracted.reverse()).toEqual(

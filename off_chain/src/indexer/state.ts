@@ -9,7 +9,7 @@ import { createRollbacks, Rollbacks } from './state/rollbacks';
 import { createTokens, Token, Tokens } from './state/tokens';
 import { createRequests, Requests } from './state/requests';
 import { Request } from '../request';
-import { OutputRef } from '../lib';
+import { OutputRef, WithOrigin } from '../lib';
 import { Level } from 'level';
 
 export type Slotted<T> = {
@@ -28,7 +28,7 @@ export type State = {
     addToken: (token: Slotted<Token>) => Promise<void>;
     removeToken: (token: Slotted<string>) => Promise<void>;
     updateToken: (change: Slotted<TokenChange>) => Promise<void>;
-    rollback: (slot: RollbackKey) => Promise<void>;
+    rollback: (slot: WithOrigin<RollbackKey>) => Promise<void>;
     request: (outputRef: OutputRef) => Promise<Request | undefined>;
     tokens: Tokens;
     requests: Requests;
@@ -142,7 +142,7 @@ export const createState = async (
                 });
             }
         },
-        rollback: async (slot: RollbackKey | null): Promise<void> => {
+        rollback: async (slot: WithOrigin<RollbackKey>): Promise<void> => {
             await checkpoints.rollback(slot);
             const rollbackSteps = await rollbacks.extractAfter(slot);
             for (const rollback of rollbackSteps) {

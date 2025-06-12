@@ -79,3 +79,5 @@ export const sleepMs = (ms: number): Promise<void> => {
 export const sleep = (seconds: number): Promise<void> => {
     return sleepMs(seconds * 1000);
 };
+
+export type WithOrigin<T> = T | 'origin';

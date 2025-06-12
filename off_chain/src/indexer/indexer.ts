@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import { Mutex } from 'async-mutex';
 import { RollbackKey } from './state/rollbackkey';
-import { Checkpoint, Checkpoints } from './state/checkpoints';
+import { Checkpoints } from './state/checkpoints';
 import { inputToOutputRef, sleepMs } from '../lib';
 import { Process } from './process';
 
@@ -167,7 +167,7 @@ export const createIndexer = async (
                                 response.result.block.slot
                             );
                             await checkpoints.putCheckpoint(
-                                { slot, blockHash: response.result.block.id },
+                                { slot, id: response.result.block.id },
                                 response.result.block.transactions.flatMap(tx =>
                                     tx.inputs.map(inputToOutputRef)
                                 )
@@ -250,17 +250,6 @@ export const createIndexer = async (
             });
             return blockHeight;
         }
-    };
-};
-
-type WsCheckpoint = {
-    slot: number;
-    id: string;
-};
-const convertCheckpoint = (checkpoint: Checkpoint): WsCheckpoint => {
-    return {
-        slot: checkpoint.slot.value,
-        id: checkpoint.blockHash
     };
 };
 
