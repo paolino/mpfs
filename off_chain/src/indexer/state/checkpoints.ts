@@ -21,7 +21,7 @@ export type Checkpoints = {
     ): Promise<void>;
     getCheckpoint(slot: RollbackKey): Promise<BlockHash | undefined>;
     getAllCheckpoints(): Promise<Checkpoint[]>;
-    extractCheckpointsAfter(cp: Checkpoint | null): Promise<CheckpointValue[]>;
+    rollback(cp: RollbackKey | null): Promise<void>;
     getIntersections(): Promise<Checkpoint[]>;
     hash(): Promise<string>;
     close(): Promise<void>;
@@ -89,15 +89,14 @@ export const createCheckpoints = async (
             const allPoints = await all();
             return samplePowerOfTwoPositions(allPoints.reverse());
         },
-        extractCheckpointsAfter: async (cp: Checkpoint | null) => {
+        rollback: async (slot: RollbackKey | null) => {
             const checkpoints: CheckpointValue[] = [];
-            const iterator = db.iterator({
-                gt: cp?.slot.key || RollbackKey.zero.key
-            });
-            for await (const [key, value] of iterator) {
-                checkpoints.push(value);
+            const iterator = slot
+                ? db.iterator({ gt: slot.key })
+                : db.iterator();
+            for await (const [key] of iterator) {
+                db.del(key);
             }
-            return checkpoints;
         },
         close: async () => {
             try {
