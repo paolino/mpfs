@@ -4,6 +4,8 @@ import { createFacts } from './fatcs';
 import { AbstractSublevel } from 'abstract-level';
 import { Change, invertChange, updateTrie } from '../trie/change';
 import { createLoaded } from '../trie/loaded';
+import { createHash } from 'crypto';
+import { nullHash, rootHex } from '../lib';
 
 export type SafeTrie = {
     getKey(key: string): Promise<Buffer | undefined>;
@@ -13,6 +15,7 @@ export type SafeTrie = {
     root(): Buffer;
     close(): Promise<void>;
     allFacts(): Promise<Record<string, string>>;
+    hash(): Promise<string>;
 };
 
 export const createSafeTrie = async (
@@ -68,6 +71,14 @@ export const createSafeTrie = async (
         },
         allFacts: async (): Promise<Record<string, string>> => {
             return await facts.getAll();
+        },
+        hash: async (): Promise<string> => {
+            const hash = createHash('sha256');
+            const th = rootHex(loaded.trie.hash) || nullHash;
+            hash.update(th);
+            const fh = await facts.hash();
+            hash.update(fh);
+            return hash.digest('hex');
         }
     };
 };

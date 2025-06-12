@@ -2,6 +2,8 @@ import { Mutex } from 'async-mutex';
 import { createSafeTrie, SafeTrie } from './trie/safeTrie';
 import { Level } from 'level';
 import { createStashable, Stashable } from './stashing';
+import { createHash } from 'crypto';
+import stableStringify from 'json-stable-stringify';
 
 export type TrieManager = {
     trieIds(): Promise<string[]>;
@@ -10,6 +12,7 @@ export type TrieManager = {
     unhide: (tokenId: string) => Promise<void>;
     trie(tokenId: string, f: (trie: SafeTrie) => Promise<any>): Promise<void>;
     delete: (tokenId: string) => Promise<void>;
+    hash: () => Promise<string>;
 };
 
 const withLock = async (lock: Mutex, f: () => Promise<void>) => {
@@ -148,6 +151,21 @@ export const createTrieManager = async (
                     ids.filter(id => id.tokenId !== tokenId)
                 );
             });
+        },
+        hash: async () => {
+            const hash = createHash('sha256');
+            const tokenIds: VisibleTokenId[] = await managerDB.get('token-ids');
+            hash.update(stableStringify(tokenIds) || '');
+            for (const { tokenId, visible } of tokenIds) {
+                if (visible) {
+                    const trie = tries[tokenId].get();
+                    if (trie) {
+                        const trieHash = await trie.hash();
+                        hash.update(trieHash);
+                    }
+                }
+            }
+            return hash.digest('hex');
         }
     };
 };
