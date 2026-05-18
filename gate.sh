@@ -3,11 +3,10 @@
 # Subagents must pass this before returning a commit;
 # the orchestrator re-runs it on review.
 #
-# This is the bootstrap gate: on-chain check/build + off-chain
-# lint (scoped to PR-touched files) + cost-models vitest. It will
-# grow further (`chore: extend gate.sh ...`) as later slices add
-# the Yaci integration test (T002–T003) and the live-boundary
-# smoke (T006).
+# Gate runs: on-chain check/build + off-chain lint (scoped to
+# PR-touched files) + cost-models unit tests + cost-models
+# integration tests (yaci-conditional). The live-preprod smoke
+# (T006) is operator-driven and not part of `gate.sh`.
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -55,6 +54,28 @@ else
 fi
 
 # 4. Off-chain unit tests for the cost-models slice (vitest, fast).
-#    Yaci-bound integration tests for T002+ land in a follow-up
-#    gate extension.
 ( cd off_chain && npx --no-install vitest run recomputeScriptDataHash )
+
+# 5. Off-chain integration tests for cost-models — yaci-conditional.
+#    Hit a live Ogmios + the Yaci-bundled chain for the protocol-
+#    parameters fetch (T002) and the end-to-end build → rewrite →
+#    submit binary regression sentinel (T003).
+#
+#    Skipped when any of yaci's three ports (1337 ogmios, 8080 store,
+#    10000 admin) is unreachable, so subagents iterating locally
+#    without a Yaci instance still get a green gate on the
+#    non-live-boundary changes. CI brings Yaci up so the full path
+#    is exercised there; if you want to run these locally,
+#    `just run-yaci-docker` (or `just run-yaci`).
+if nc -z localhost 1337 2>/dev/null \
+    && nc -z localhost 8080 2>/dev/null \
+    && nc -z localhost 10000 2>/dev/null; then
+  echo "gate: yaci is up, running cost-models integration tests"
+  ( cd off_chain && npx --no-install vitest run \
+      src/ogmios/protocolParameters.integration.test.ts \
+      src/tx/getTxBuilder.integration.test.ts )
+else
+  echo "gate: yaci is not up on localhost:{1337,8080,10000}; skipping"
+  echo "      cost-models integration tests. Run \`just run-yaci-docker\`"
+  echo "      and rerun gate.sh to exercise the live boundary locally."
+fi

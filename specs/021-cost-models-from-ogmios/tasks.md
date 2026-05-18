@@ -151,7 +151,7 @@ cost-models.md Contract 3. Same test passes.
 
 **Commit subject**: `fix(tx): inject live cost models into MeshTxBuilder.complete()`
 
-### T004 (chore, orchestrator-authored) Extend `gate.sh` with the cost-models tests
+### [X] T004 (chore, orchestrator-authored) Extend `gate.sh` with the cost-models tests (commit: 957b6731)
 
 **Owned files**:
 - `gate.sh`
