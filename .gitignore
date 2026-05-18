@@ -24,3 +24,7 @@ off_chain/node_modules/
 .direnv
 .vscode/settings.json
 off_chain/secrets
+
+# Per-worktree ephemera (resolve-ticket / subagent run log).
+WIP.md
+.llm/
