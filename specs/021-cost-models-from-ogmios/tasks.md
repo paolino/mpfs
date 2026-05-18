@@ -75,7 +75,7 @@ locally; the orchestrator runs it before accepting the commit).
 
 **Commit subject**: `feat(tx): recompute script-data-hash with live cost models`
 
-### T002 [US1] Implement and test `fetchLiveCostModels` against Yaci's Ogmios
+### [X] T002 [US1] Implement and test `fetchLiveCostModels` against Yaci's Ogmios (commit: 787d586a)
 
 **Owned files**:
 - `off_chain/src/ogmios/protocolParameters.ts` (new)
