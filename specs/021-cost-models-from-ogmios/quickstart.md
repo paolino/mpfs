@@ -97,3 +97,44 @@ satisfied — open the gate back up.
   `digest`.
 - No `ogmios 3113` errors in preprod logs over the 24-hour observation
   window post-deploy.
+
+## Latest verified run
+
+**2026-05-18** — `moog retract` against the production token from
+issue #21, executed against `mpfs.plutimus.com` running
+`ghcr.io/cardano-foundation/mpfs/mpfs:issue-21-fe14058c` (the patched
+image built off this branch's tip).
+
+- **Retracted request**: `6ba164a16e7e8a73d176117dd01c48e1b23baacfe9f00edca1c626a0fa9a33cb#0`
+  (an agent-owned request stuck on `UpdateTestRunFailure /
+  keyDoesNotExist`).
+- **Retract txid**: [`1ebceec995b900a84b5c3bbd25c271441c4053f137f6aefd28d7e0470547d1b0`](https://preprod.cardanoscan.io/transaction/1ebceec995b900a84b5c3bbd25c271441c4053f137f6aefd28d7e0470547d1b0)
+- **Token after retract**: the request is gone from `moog token`'s
+  pending list; the two remaining requests are unchanged.
+- **`live_cost_models` log entry captured at build time**:
+
+  ```json
+  {
+    "ts":         "2026-05-18T15:19:07.968Z",
+    "level":      "info",
+    "msg":        "live_cost_models",
+    "source":     "ogmios",
+    "ogmios_url": "http://ogmios-preprod:1337",
+    "lengths":    { "v1": 332, "v2": 332, "v3": 350 },
+    "digest":     "sha256:8430db226d71e399a2bb0e119e983b36f252fc7da25f339b444d0de792255ec2"
+  }
+  ```
+
+  The `lengths` match the post-bump preprod cost-model vectors from
+  the issue body (V1: 166→332, V2: 175→332, V3: missing→350). The
+  fix is sourcing the correct values from the live chain at
+  tx-build time — exactly the path the unfixed code missed.
+
+- **Build → submit latency**: ~32 ms between the `live_cost_models`
+  log line (15:19:07.968) and `tx_submit_ok` (15:19:08.000). Cost
+  to the wrapper is dominated by the Ogmios round-trip and is small
+  relative to overall tx-build time.
+
+This is the load-bearing constitution-Principle-III evidence
+required by SC-002. The fix is verified end-to-end against the
+chain whose enacted cost models broke MPFS in production.

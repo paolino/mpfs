@@ -195,7 +195,7 @@ with fields `event="live_cost_models"`, `source="ogmios"`,
 
 ## Phase 4 — User Story 2 (live-preprod smoke; operator-driven)
 
-### T006 [US2] Run the preprod live-boundary smoke and record evidence
+### [X] T006 [US2] Run the preprod live-boundary smoke and record evidence (txid: 1ebceec9)
 
 **Owned by**: orchestrator + operator. Not a subagent slice.
 
