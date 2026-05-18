@@ -39,7 +39,14 @@ const TEST_TX_HASH_HEX =
     '00000000000000000000000000000000000000000000000000000000deadbeef';
 
 function liveOf(costmdls: Costmdls): LiveCostModels {
-    return { costMdls: () => costmdls };
+    // Test helper. T001 asserts only `costMdls()` behavior; the
+    // `digest()` / `lengths()` methods exist solely to satisfy the
+    // widened interface (T002) and are not exercised here.
+    return {
+        costMdls: () => costmdls,
+        digest: () => 'sha256:test-fixture',
+        lengths: () => ({}),
+    };
 }
 
 function costModelOfList(values: number[]): CostModel {

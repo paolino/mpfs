@@ -26,13 +26,20 @@ export class ScriptDataHashRewriteError extends Error {
  * In-memory wrapper around the live cost models obtained from a fresh
  * Ogmios `queryLedgerState/protocolParameters` reply.
  *
- * T001 exposes only `costMdls()`, the WASM-side handle consumed by
- * `hash_script_data`. Slice T002 will extend this interface with
- * `digest()` and `lengths()` for FR-006 logging; consumers should
- * therefore depend on the interface name, not on its current shape.
+ * `costMdls()` is the WASM-side handle consumed by `hash_script_data`.
+ * `digest()` is a short identifier (sha256 of the canonical Costmdls
+ * CBOR bytes, prefixed `sha256:`) used in the FR-006 build log.
+ * `lengths()` reports the per-language cost-vector lengths so log
+ * lines and post-incident triage can confirm which vectors were used;
+ * keys are omitted for absent languages.
+ *
+ * See specs/021-cost-models-from-ogmios/data-model.md and
+ * contracts/cost-models.md (Contract 1).
  */
 export interface LiveCostModels {
     costMdls(): Costmdls;
+    digest(): string;
+    lengths(): { v1?: number; v2?: number; v3?: number };
 }
 
 /**
