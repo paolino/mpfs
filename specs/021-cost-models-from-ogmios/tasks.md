@@ -80,9 +80,9 @@ locally; the orchestrator runs it before accepting the commit).
 **Owned files**:
 - `off_chain/src/ogmios/protocolParameters.ts` (new)
 - `off_chain/src/submitter.ts` (extend `Client` with a `query(method, params)` shape *only if* needed — the orchestrator OKs the extension at review)
-- `off_chain/src/ogmios/protocolParameters.integration.test.ts` (new — ava picks up `*.test.ts` per project convention; orchestrator confirms the ava glob before dispatch of T002)
+- `off_chain/src/ogmios/protocolParameters.integration.test.ts` (new — vitest picks up `*.test.ts` per project convention; orchestrator confirms the vitest glob before dispatch of T002)
 
-**RED**: an ava integration test that:
+**RED**: a vitest integration test that:
 1. Boots Yaci DevKit (existing `just test-all` prerequisite — guards
    on `OGMIOS_PORT` being open before running).
 2. Calls `fetchLiveCostModels('ws://localhost:1337')`.
@@ -118,9 +118,9 @@ exercised end-to-end by US2's preprod smoke.
 
 **Owned files**:
 - `off_chain/src/transactions/context/lib.ts` (modify `getTxBuilder` to wrap `complete()`)
-- `off_chain/src/tx/getTxBuilder.integration.test.ts` (new — end-to-end build → rewrite → submit; co-located so vitest/ava globs both reach it)
+- `off_chain/src/tx/getTxBuilder.integration.test.ts` (new — end-to-end build → rewrite → submit; co-located so vitest picks it up)
 
-**RED**: the ava integration test that drives the binary regression
+**RED**: the vitest integration test that drives the binary regression
 sentinel for SC-004:
 
 1. Build a script-bearing MPFS tx (the retract path is the cheapest
@@ -158,7 +158,7 @@ cost-models.md Contract 3. Same test passes.
 
 `gate.sh` grows two lines:
 - `( cd off_chain && npx vitest run -t "cost-models" )`
-- `( cd off_chain && if nc -z localhost 1337 2>/dev/null; then npx ava 'test/cost-models/**/*.test.ts'; else echo "skip: yaci not up"; fi )`
+- `( cd off_chain && if nc -z localhost 1337 2>/dev/null; then npx vitest run --testNamePattern '@yaci' ; else echo "skip: yaci not up"; fi )`
 
 Yaci-conditional skip is deliberate: subagents iterating locally
 without a Yaci instance still get a green gate on the

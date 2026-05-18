@@ -26,13 +26,14 @@ live in [contracts/cost-models.md](./contracts/cost-models.md).
 **Language/Version**: TypeScript on Node 20 (run via `tsx`)
 **Primary Dependencies**: `@meshsdk/core@1.8.14`, `@meshsdk/core-csl`,
   `@sidan-lab/sidan-csl-rs-nodejs` (Rust-WASM, transitive via core-csl),
-  `ws` (WebSocket client to Ogmios), `vitest` + `ava` (existing test
-  runners)
+  `ws` (WebSocket client to Ogmios), `vitest` (existing test runner;
+  the same framework runs unit and integration tests in this repo)
 **Storage**: N/A (no persistent state added by this fix)
-**Testing**: `vitest` for unit tests (deterministic CBOR + hash), `ava`
-  for Yaci-integration tests (boots yaci-store + yaci-admin + ogmios),
-  live preprod smoke via `moog retract` (operator-driven; recorded txid
-  in PR description)
+**Testing**: `vitest` for unit and integration tests (deterministic
+  CBOR + hash for the unit layer; Yaci-backed integration tests skip
+  themselves with `describe.skipIf(!yaciUp)` when ports 1337/8080/10000
+  are not open). Live preprod smoke via `moog retract` (operator-
+  driven; recorded txid in PR description).
 **Target Platform**: Linux/macOS Node 20 server runtime; the off-chain
   service runs containerized in production behind the existing reverse
   proxy.
@@ -92,21 +93,22 @@ off_chain/
 │   │       └── lib.ts                                       # MODIFY: wrap getTxBuilder().complete()
 │   ├── ogmios/                                              # NEW: tiny query client
 │   │   ├── protocolParameters.ts                            # NEW: fetchLiveCostModels(ogmiosUrl)
-│   │   └── protocolParameters.integration.test.ts           # NEW: Yaci integration (ava)
+│   │   └── protocolParameters.integration.test.ts           # NEW: Yaci integration (vitest, skipIf-guarded)
 │   ├── tx/
 │   │   ├── recomputeScriptDataHash.ts                       # NEW: pure CBOR rewriter
 │   │   ├── recomputeScriptDataHash.test.ts                  # NEW: deterministic unit test (vitest)
-│   │   └── getTxBuilder.integration.test.ts                 # NEW: end-to-end build → rewrite → submit (ava)
+│   │   └── getTxBuilder.integration.test.ts                 # NEW: end-to-end build → rewrite → submit (vitest, skipIf-guarded)
 │   └── submitter.ts                                         # MAY REUSE: existing ws client helpers
 
 on_chain/                                                    # UNCHANGED (no validator change)
 ```
 
 Test layout follows the existing project convention: vitest's
-`vitest.config.ts` has `include: ['src/**/*.test.ts']`, so unit tests
+`vitest.config.ts` has `include: ['src/**/*.test.ts']`, so all tests
 are co-located alongside the modules they exercise. Integration tests
-use the `.integration.test.ts` suffix and run under ava per the
-existing pattern in `src/indexer/state.integration.test.ts`.
+use the `.integration.test.ts` suffix and guard their suites with
+`describe.skipIf(!(await isYaciUp()))` per the existing pattern in
+`src/indexer/state.integration.test.ts`.
 
 **Structure Decision**: Two new modules under `off_chain/src/`
 (`ogmios/protocolParameters.ts` for the live fetch, `tx/recomputeScriptDataHash.ts`
@@ -157,7 +159,7 @@ Slice 3.
 - `off_chain/test/cost-models/fetch-and-rewrite.integration.test.ts` (new — set up only; full Yaci wiring lands in Slice 3)
 - `off_chain/src/submitter.ts` (extend the existing client helper if reused)
 
-**RED proof**: an ava test that boots Yaci's ogmios and asserts the
+**RED proof**: a vitest integration test that talks to Yaci's ogmios and asserts the
 fetcher returns a `LiveCostModels` whose `.lengths()` are
 non-zero and whose `.digest()` is stable across calls in the same
 session. The test must fail before the module is implemented (the
