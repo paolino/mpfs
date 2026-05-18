@@ -19,6 +19,7 @@ config/download.properties
 config/node.properties
 config/application.properties
 
+off_chain/node_modules
 off_chain/node_modules/
 
 .direnv
