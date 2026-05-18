@@ -169,7 +169,7 @@ No `Tasks:` trailer — chore commit per commit-message gate.
 
 **Commit subject**: `chore: extend gate.sh with cost-models unit + integration tests`
 
-### T005 [US1] Emit the structured log entry (FR-006)
+### [X] T005 [US1] Emit the structured log entry (FR-006) (commit: 473c8e6f)
 
 **Owned files**:
 - `off_chain/src/transactions/context/lib.ts` (extend the wrapper's
