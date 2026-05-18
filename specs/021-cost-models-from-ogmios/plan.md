@@ -89,19 +89,24 @@ off_chain/
 ├── src/
 │   ├── transactions/
 │   │   └── context/
-│   │       └── lib.ts                       # MODIFY: wrap getTxBuilder().complete()
-│   ├── ogmios/                              # NEW (or under submitter/): tiny query client
-│   │   └── protocolParameters.ts            # NEW: fetchLiveCostModels(ogmiosUrl)
+│   │       └── lib.ts                                       # MODIFY: wrap getTxBuilder().complete()
+│   ├── ogmios/                                              # NEW: tiny query client
+│   │   ├── protocolParameters.ts                            # NEW: fetchLiveCostModels(ogmiosUrl)
+│   │   └── protocolParameters.integration.test.ts           # NEW: Yaci integration (ava)
 │   ├── tx/
-│   │   └── recomputeScriptDataHash.ts       # NEW: pure CBOR rewriter
-│   └── submitter.ts                         # MAY REUSE: existing ws client helpers
-└── test/
-    └── cost-models/
-        ├── recompute.unit.test.ts           # NEW: deterministic unit test (vitest)
-        └── fetch-and-rewrite.integration.test.ts  # NEW: Yaci integration (ava)
+│   │   ├── recomputeScriptDataHash.ts                       # NEW: pure CBOR rewriter
+│   │   ├── recomputeScriptDataHash.test.ts                  # NEW: deterministic unit test (vitest)
+│   │   └── getTxBuilder.integration.test.ts                 # NEW: end-to-end build → rewrite → submit (ava)
+│   └── submitter.ts                                         # MAY REUSE: existing ws client helpers
 
-on_chain/                                    # UNCHANGED (no validator change)
+on_chain/                                                    # UNCHANGED (no validator change)
 ```
+
+Test layout follows the existing project convention: vitest's
+`vitest.config.ts` has `include: ['src/**/*.test.ts']`, so unit tests
+are co-located alongside the modules they exercise. Integration tests
+use the `.integration.test.ts` suffix and run under ava per the
+existing pattern in `src/indexer/state.integration.test.ts`.
 
 **Structure Decision**: Two new modules under `off_chain/src/`
 (`ogmios/protocolParameters.ts` for the live fetch, `tx/recomputeScriptDataHash.ts`
