@@ -51,9 +51,7 @@ ride on.
 
 **Owned files**:
 - `off_chain/src/tx/recomputeScriptDataHash.ts` (new)
-- `off_chain/test/cost-models/recompute.unit.test.ts` (new)
-- `off_chain/test/cost-models/fixtures/preprod-cost-models-2026-05-17.json` (new — committed snapshot)
-- `off_chain/test/cost-models/fixtures/unsigned-tx-mesh-defaults.cbor.txt` (new — committed snapshot)
+- `off_chain/src/tx/recomputeScriptDataHash.test.ts` (new — co-located per the existing vitest convention `include: ['src/**/*.test.ts']`; fixtures are built inline inside the test from `@sidan-lab/sidan-csl-rs-nodejs` primitives, no committed JSON/CBOR files needed)
 
 **RED**: the vitest unit test imports `recomputeScriptDataHash` and
 asserts (a) on the committed tx CBOR + committed cost-models pair,
@@ -82,7 +80,7 @@ locally; the orchestrator runs it before accepting the commit).
 **Owned files**:
 - `off_chain/src/ogmios/protocolParameters.ts` (new)
 - `off_chain/src/submitter.ts` (extend `Client` with a `query(method, params)` shape *only if* needed — the orchestrator OKs the extension at review)
-- `off_chain/test/cost-models/fetch.integration.test.ts` (new)
+- `off_chain/src/ogmios/protocolParameters.integration.test.ts` (new — ava picks up `*.test.ts` per project convention; orchestrator confirms the ava glob before dispatch of T002)
 
 **RED**: an ava integration test that:
 1. Boots Yaci DevKit (existing `just test-all` prerequisite — guards
@@ -120,7 +118,7 @@ exercised end-to-end by US2's preprod smoke.
 
 **Owned files**:
 - `off_chain/src/transactions/context/lib.ts` (modify `getTxBuilder` to wrap `complete()`)
-- `off_chain/test/cost-models/fetch-and-rewrite.integration.test.ts` (new — end-to-end build → rewrite → submit)
+- `off_chain/src/tx/getTxBuilder.integration.test.ts` (new — end-to-end build → rewrite → submit; co-located so vitest/ava globs both reach it)
 
 **RED**: the ava integration test that drives the binary regression
 sentinel for SC-004:
@@ -178,7 +176,7 @@ No `Tasks:` trailer — chore commit per commit-message gate.
   success path; lib's existing `logging.ts` import is reused if
   available)
 - `off_chain/src/logging.ts` (read-only unless a helper is missing)
-- `off_chain/test/cost-models/recompute.unit.test.ts` (extend with
+- `off_chain/src/tx/recomputeScriptDataHash.test.ts` (extend with
   one new test case)
 
 **RED**: a vitest test that stubs the structured-log helper and
