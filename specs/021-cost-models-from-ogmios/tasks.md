@@ -47,7 +47,7 @@ These two slices land before either user story can be exercised.
 They are the pure substrate that US1's wire-in and US2's smoke both
 ride on.
 
-### T001 [US1] Implement and test the pure `recomputeScriptDataHash` rewriter
+### [X] T001 [US1] Implement and test the pure `recomputeScriptDataHash` rewriter (commit: a8ccef29)
 
 **Owned files**:
 - `off_chain/src/tx/recomputeScriptDataHash.ts` (new)
