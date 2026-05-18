@@ -222,7 +222,7 @@ evidence comes from here.
 
 ## Phase 5 — Finalization
 
-### T007 (chore, orchestrator-authored) Drop `gate.sh` and mark PR ready
+### [X] T007 (chore, orchestrator-authored) Drop `gate.sh` and mark PR ready (commit: b38f6197)
 
 **Owned files**: `gate.sh` (deleted via `git rm`)
 
