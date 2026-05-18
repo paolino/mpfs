@@ -27,6 +27,7 @@ import {
     fetchLiveCostModels,
     LiveCostModelsIncomplete
 } from '../../ogmios/protocolParameters';
+import { log } from '../../log';
 
 /**
  * Inspect a freshly-built tx hex for which Plutus language versions
@@ -182,6 +183,25 @@ export function getTxBuilder(provider: Provider, ogmios: string) {
             builder.txHex,
             restrictedLive
         );
+
+        // FR-006: emit one structured log entry per successful
+        // script-bearing build, naming the source, the Ogmios URL the
+        // caller passed in, the per-language cost-vector lengths and
+        // the digest of the WIDER live cost-model set the fetcher
+        // saw. We deliberately report `live.lengths()` / `live.digest()`
+        // (NOT the restricted set used inside the hash) so post-incident
+        // triage knows what the chain advertised at build time.
+        // Failure paths (LiveCostModelsUnavailable, LiveCostModelsIncomplete,
+        // ScriptDataHashRewriteError) and the non-Plutus identity
+        // path stay silent — their typed errors / no-op shape already
+        // carry enough for triage.
+        log.info('live_cost_models', {
+            source: 'ogmios',
+            ogmios_url: ogmios,
+            lengths: live.lengths(),
+            digest: live.digest()
+        });
+
         builder.txHex = rewritten;
         return rewritten;
     }) as MeshTxBuilder['complete'];
