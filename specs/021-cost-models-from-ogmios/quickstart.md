@@ -138,3 +138,36 @@ image built off this branch's tip).
 This is the load-bearing constitution-Principle-III evidence
 required by SC-002. The fix is verified end-to-end against the
 chain whose enacted cost models broke MPFS in production.
+
+### Recovery of the oracle crash-loop (same deploy)
+
+The same image was deployed to the internal MPFS instance the
+moog oracle talks to (`10.1.21.21:3000` behind the cf-systems
+jumpbox). The oracle had been crashing at `MPFS.hs:87:29` on every
+poll cycle. Once the patched MPFS came up, the oracle picked up
+the two remaining validated requests and pushed them through the
+chain in two successive batch-update txs, both built via the new
+wrapper:
+
+| Batch tx | Inputs | Outputs | Redeemers | Size | `live_cost_models` ts |
+|---|---|---|---|---|---|
+| [`9505ae23…918e7cf10`](https://preprod.cardanoscan.io/transaction/9505ae231c2a8786ab5906579343d2d201fe73f3b3d90f1334e2a1b918e7cf10) | 2 | 2 | 2 | 6,708 bytes | 2026-05-18T15:26:14.447Z |
+| [`d4b433b5…f2c4bb68`](https://preprod.cardanoscan.io/transaction/d4b433b56c38738649682edd3eb2f200c6d24bfcc77a470e1d2304c7f2c4bb68) | 2 | 2 | 2 | 6,781 bytes | 2026-05-18T15:26:57.526Z |
+
+After both confirmed, the token state was:
+
+```json
+{
+  "root":     null,
+  "requests": 0,
+  "state": {
+    "owner": "1f5cebecb4cd1cad6108a86014de9d8f23f9d4477bbddb3e1289b224",
+    "root":  "c08ed8e2c7322968405c1803af093ded833f5ef1db2893e01ccf327ec436c17b"
+  }
+}
+```
+
+Oracle logs flipped to `Sleeping for 30 seconds...` (idle) — the
+crash-loop from `MPFS.hs:87:29` is over. The fix unsticks the
+oracle without any change to moog itself; the bug was always in
+the off-chain tx-builder path MPFS exposed.
