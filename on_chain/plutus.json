@@ -179,6 +179,7 @@
     },
     "lib/TokenId": {
       "title": "TokenId",
+      "description": "A unique identifier for a token, consisting of just the asset name.\n\n The policy ID is provided separately in functions that need it,\n allowing the same TokenId to be used across different contexts.",
       "anyOf": [
         {
           "title": "TokenId",
@@ -195,9 +196,11 @@
     },
     "types/CageDatum": {
       "title": "CageDatum",
+      "description": "Datum for UTxOs locked at the cage script address.\n\n The cage script can hold two types of UTxOs:\n - State UTxOs: contain the caged token and its MPF root\n - Request UTxOs: contain pending requests to modify a token's MPF",
       "anyOf": [
         {
           "title": "RequestDatum",
+          "description": "A pending request to modify someone's caged token",
           "dataType": "constructor",
           "index": 0,
           "fields": [
@@ -208,6 +211,7 @@
         },
         {
           "title": "StateDatum",
+          "description": "The current state of a caged token",
           "dataType": "constructor",
           "index": 1,
           "fields": [
@@ -220,6 +224,7 @@
     },
     "types/Mint": {
       "title": "Mint",
+      "description": "Parameters for minting a new caged token.\n\n The asset name is derived from the hash of the output reference,\n ensuring uniqueness.",
       "anyOf": [
         {
           "title": "Mint",
@@ -228,6 +233,7 @@
           "fields": [
             {
               "title": "asset",
+              "description": "The output reference used to derive the asset name (via hash).\n This must be one of the transaction inputs to ensure uniqueness.",
               "$ref": "#/definitions/cardano~1transaction~1OutputReference"
             }
           ]
@@ -236,9 +242,11 @@
     },
     "types/MintRedeemer": {
       "title": "MintRedeemer",
+      "description": "Redeemer for the minting policy.",
       "anyOf": [
         {
           "title": "Minting",
+          "description": "Mint a new caged token with the given parameters",
           "dataType": "constructor",
           "index": 0,
           "fields": [
@@ -249,6 +257,7 @@
         },
         {
           "title": "Burning",
+          "description": "Burn an existing caged token (no additional validation)",
           "dataType": "constructor",
           "index": 1,
           "fields": []
@@ -257,9 +266,11 @@
     },
     "types/Operation": {
       "title": "Operation",
+      "description": "Operations that can be performed on the MPF.\n\n Each operation modifies the MPF in a specific way and requires\n a corresponding proof to validate the transition.",
       "anyOf": [
         {
           "title": "Insert",
+          "description": "Insert a new key-value pair. Fails if key already exists.",
           "dataType": "constructor",
           "index": 0,
           "fields": [
@@ -270,6 +281,7 @@
         },
         {
           "title": "Delete",
+          "description": "Delete an existing key-value pair. The ByteArray is the expected value.",
           "dataType": "constructor",
           "index": 1,
           "fields": [
@@ -280,6 +292,7 @@
         },
         {
           "title": "Update",
+          "description": "Update an existing key's value. Args: (old_value, new_value)",
           "dataType": "constructor",
           "index": 2,
           "fields": [
@@ -295,6 +308,7 @@
     },
     "types/Request": {
       "title": "Request",
+      "description": "A request to modify a caged token's MPF.\n\n Requests are created by users who want to contribute data to\n someone else's caged token. The token owner can then accept\n the request by including it in a Modify transaction.",
       "anyOf": [
         {
           "title": "Request",
@@ -303,18 +317,22 @@
           "fields": [
             {
               "title": "requestToken",
+              "description": "The token this request targets (by asset name)",
               "$ref": "#/definitions/lib~1TokenId"
             },
             {
               "title": "requestOwner",
+              "description": "The owner of this request (can reclaim via Retract)",
               "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
             },
             {
               "title": "requestKey",
+              "description": "The key to insert/update/delete in the MPF",
               "$ref": "#/definitions/ByteArray"
             },
             {
               "title": "requestValue",
+              "description": "The operation to perform on the key",
               "$ref": "#/definitions/types~1Operation"
             }
           ]
@@ -323,6 +341,7 @@
     },
     "types/State": {
       "title": "State",
+      "description": "The state of a caged token, stored as inline datum.\n\n This represents the current owner and MPF root of the caged token.",
       "anyOf": [
         {
           "title": "State",
@@ -331,10 +350,12 @@
           "fields": [
             {
               "title": "owner",
+              "description": "The verification key hash of the token owner.\n Only the owner can modify the MPF state or end the cage.",
               "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
             },
             {
               "title": "root",
+              "description": "The current Merkle Patricia Forestry root hash.\n This commits to all key-value pairs stored in the MPF.",
               "$ref": "#/definitions/ByteArray"
             }
           ]
@@ -343,15 +364,18 @@
     },
     "types/UpdateRedeemer": {
       "title": "UpdateRedeemer",
+      "description": "Redeemer for spending caged UTxOs.\n\n Different actions are available depending on whether the UTxO\n contains a State or a Request datum.",
       "anyOf": [
         {
           "title": "End",
+          "description": "Destroy the caged token (burns the NFT). Requires State datum.",
           "dataType": "constructor",
           "index": 0,
           "fields": []
         },
         {
           "title": "Contribute",
+          "description": "Accept a pending request, folding it into the MPF. Requires Request datum.\n The OutputReference points to the State UTxO being updated.",
           "dataType": "constructor",
           "index": 1,
           "fields": [
@@ -362,6 +386,7 @@
         },
         {
           "title": "Modify",
+          "description": "Update the MPF state by processing input requests. Requires State datum.\n The proofs list must match the requests being processed.",
           "dataType": "constructor",
           "index": 2,
           "fields": [
@@ -372,6 +397,7 @@
         },
         {
           "title": "Retract",
+          "description": "Allow the request owner to reclaim their Request UTxO. Requires Request datum.",
           "dataType": "constructor",
           "index": 3,
           "fields": []
