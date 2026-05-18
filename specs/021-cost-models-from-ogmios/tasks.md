@@ -114,7 +114,7 @@ exercised end-to-end by US2's preprod smoke.
 
 ## Phase 3 — User Story 1 (Yaci-level proof)
 
-### T003 [US1] Wire `recomputeScriptDataHash` + `fetchLiveCostModels` into `getTxBuilder` and prove the regression boundary
+### [X] T003 [US1] Wire `recomputeScriptDataHash` + `fetchLiveCostModels` into `getTxBuilder` and prove the regression boundary (commit: 8636eadf)
 
 **Owned files**:
 - `off_chain/src/transactions/context/lib.ts` (modify `getTxBuilder` to wrap `complete()`)
