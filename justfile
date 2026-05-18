@@ -83,12 +83,18 @@ docker-down:
 run-yaci:
     yaci-cli up --enable-yaci-store
 
-# Run yaci-cli in docker container
+# Run yaci-cli in docker container.
+#
+# The image's `[sh /app/yaci-cli.sh]` entrypoint uses bash-only
+# `[ "$x" == "y" ]` syntax, which dies under busybox sh with
+# `Invalid mode. Please use 'java' or 'native'.` Overriding the
+# entrypoint to bash makes the script run as the author intended.
 run-yaci-docker:
     #!/usr/bin/env bash
     docker run -d --name yaci-devkit \
+        --entrypoint bash \
         -p 8080:8080 -p 10000:10000 -p 1337:1337 \
-        bloxbean/yaci-cli:0.10.6-beta up --enable-yaci-store
+        bloxbean/yaci-cli:0.10.6-beta /app/yaci-cli.sh up --enable-yaci-store
 
 # Stop and remove yaci docker container
 stop-yaci-docker:
@@ -105,11 +111,13 @@ test-docker:
     docker stop yaci-devkit 2>/dev/null || true
     docker rm yaci-devkit 2>/dev/null || true
 
-    # Start yaci-cli in docker
+    # Start yaci-cli in docker (see run-yaci-docker for the
+    # --entrypoint bash rationale).
     echo "Starting yaci-cli docker container..."
     docker run -d --name yaci-devkit \
+        --entrypoint bash \
         -p 8080:8080 -p 10000:10000 -p 1337:1337 \
-        bloxbean/yaci-cli:0.10.6-beta up --enable-yaci-store
+        bloxbean/yaci-cli:0.10.6-beta /app/yaci-cli.sh up --enable-yaci-store
 
     # Ensure cleanup on exit
     trap 'docker stop yaci-devkit 2>/dev/null; docker rm yaci-devkit 2>/dev/null' EXIT
