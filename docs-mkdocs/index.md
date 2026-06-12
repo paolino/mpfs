@@ -31,7 +31,12 @@ It is designed to be used by anyone who wants to store and manage knowledge in a
 
 It is particularly useful for applications that require a verifiable and immutable record of knowledge, such as decentralized applications (dApps), knowledge management systems, and collaborative platforms.
 
-The service comes in 2 flavors: signingful and signingless. The signingful version is suitable for local installations where it controls a private key for the user, while the signingless version is suitable for remote installations where the user has to provide a signature for each transaction.
+The repository ships the **signingless** service: it builds and balances
+transactions and delegates signing to the caller. Every endpoint returns an
+unsigned CBOR transaction that the user signs locally and submits back, so the
+service never holds a private key. This makes it suitable for shared, public
+deployments — the operator only has to protect the instance from abuse, not
+custody anyone's keys.
 
 ## Quick Links
 

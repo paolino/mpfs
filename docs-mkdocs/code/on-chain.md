@@ -13,43 +13,53 @@ The cage smart contract manages MPF (Merkle Patricia Forestry) tokens on Cardano
 Defines the core data types used throughout the contract:
 
 #### `Mint`
-Represents the type of minting operation:
-- `Boot` - Creates a new MPF token with an empty root
-- `Destroy` - Burns an existing MPF token
+Parameters for minting a new caged token. The `asset` output reference must be
+one of the transaction inputs; its hash becomes the token's asset name,
+guaranteeing uniqueness:
+```aiken
+type Mint {
+  asset: OutputReference,
+}
+```
 
 #### `MintRedeemer`
-Redeemer for minting policy validation:
+Redeemer for the minting policy:
 ```aiken
 type MintRedeemer {
-  Boot { token: TokenId }
-  Destroy
+  Minting(Mint)  // Mint a new caged token
+  Burning        // Burn an existing caged token (no extra validation)
 }
 ```
 
 #### `UpdateRedeemer`
-Redeemer for spending validator (state updates):
+Redeemer for spending caged UTxOs. The available action depends on whether the
+UTxO carries a `State` or a `Request` datum (constructor order matters — it is
+the on-chain `ConStr` index):
 ```aiken
 type UpdateRedeemer {
-  proofs: List<Proof>
+  End                       // ConStr0: destroy the caged token (State datum)
+  Contribute(OutputReference) // ConStr1: link a request to a State UTxO (Request datum)
+  Modify(List<Proof>)       // ConStr2: fold requests into the MPF (State datum)
+  Retract                   // ConStr3: reclaim a Request UTxO (Request datum)
 }
 ```
 
 #### `State`
-Represents the current state of an MPF token:
+The state of a caged token, stored as an inline datum:
 ```aiken
 type State {
-  owner: ByteArray,  // Public key hash of the owner
-  root: Hash<Blake2b_256, ByteArray>  // Current MPF root hash
+  owner: VerificationKeyHash,  // Public key hash of the owner
+  root: ByteArray,             // Current MPF root hash
 }
 ```
 
 #### `Operation`
-Defines the operations that can be applied to an MPF:
+The operations that can be applied to the MPF. Variants are positional:
 ```aiken
 type Operation {
-  Insert { new_value: ByteArray }
-  Delete { old_value: ByteArray }
-  Update { old_value: ByteArray, new_value: ByteArray }
+  Insert(ByteArray)            // new value
+  Delete(ByteArray)            // expected (old) value
+  Update(ByteArray, ByteArray) // (old_value, new_value)
 }
 ```
 
@@ -57,40 +67,43 @@ type Operation {
 A pending modification request:
 ```aiken
 type Request {
-  tokenId: TokenId,     // Target token identifier
-  owner: ByteArray,     // Request owner's pub key hash
-  key: ByteArray,       // MPF key to modify
-  operation: Operation  // The requested operation
+  requestToken: TokenId,            // Target token (by asset name)
+  requestOwner: VerificationKeyHash, // Request owner (can Retract)
+  requestKey: ByteArray,            // MPF key to modify
+  requestValue: Operation,          // The requested operation
 }
 ```
 
 #### `CageDatum`
-The datum type for UTxOs at the cage address:
+The datum type for UTxOs at the cage address. Variants are positional:
 ```aiken
 type CageDatum {
-  RequestDatum { request: Request }  // A pending request
-  StateDatum { state: State }        // Token state
+  RequestDatum(Request)  // A pending request
+  StateDatum(State)      // Token state
 }
 ```
 
 ### `lib.ak`
 
-Helper functions for token manipulation:
+Helper functions for token handling. `TokenId` is defined here as a wrapper
+around an `AssetName`:
 
-#### `quantity(value, policy, name)`
-Extracts the quantity of a specific asset from a Value.
+#### `quantity(policyId: PolicyId, value: Value, TokenId) -> Option<Int>`
+Returns the quantity of the given token in a value, or `None` if absent.
 
-#### `assetName(value, policy)`
-Retrieves the asset name of the first token found for a given policy.
+#### `assetName(ref: OutputReference) -> Hash<Sha2_256, OutputReference>`
+Computes a unique asset name as the SHA2-256 hash of the transaction id
+concatenated with the output index (2 big-endian bytes).
 
-#### `valueFromToken(policy, name, quantity)`
-Creates a Value containing the specified token.
+#### `valueFromToken(policyId: PolicyId, TokenId) -> Value`
+Constructs a value holding exactly one of the given token.
 
-#### `tokenFromValue(value, policy)`
-Extracts token information (name and quantity) from a Value.
+#### `tokenFromValue(value: Value) -> Option<TokenId>`
+Extracts the single non-ADA token from a value, or `None` if it does not hold
+exactly one policy with exactly one asset name.
 
-#### `extractTokenFromInputs(inputs, policy)`
-Finds and extracts a token from a list of transaction inputs.
+#### `extractTokenFromInputs(what: OutputReference, inputs: List<Input>)`
+Finds the input matching the output reference and extracts its single token.
 
 ### `cage.ak`
 
@@ -100,7 +113,7 @@ The main validator implementing both minting policy and spending validator.
 
 The minting policy controls token creation and destruction:
 
-### Boot (Minting)
+### `Minting` (boot)
 When creating a new token:
 1. The token ID must be unique (derived from a spent UTxO)
 2. Exactly one token is minted
@@ -109,10 +122,11 @@ When creating a new token:
    - A null (empty) MPF root
    - The signer as the owner
 
-### Destroy (Burning)
+### `Burning` (end)
 When destroying a token:
 1. The token is burned (quantity: -1)
-2. The owner must sign the transaction
+2. No additional validation runs in the minting policy; the spending validator's
+   `End` case enforces owner signature when the State UTxO is consumed
 
 ## Spending Validator
 

@@ -44,8 +44,11 @@ All transaction endpoints return unsigned CBOR transactions that must be signed 
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/tips` | GET | Get current network and indexer tips |
-| `/wait/{nBlocks}` | GET | Wait for specified number of blocks |
+| `/wait/{nBlocks}` | GET | Wait for the given number of blocks |
+
+The current network and indexer tips are returned alongside the token list by
+`GET /tokens` (in the `indexerStatus` field); there is no standalone `/tips`
+endpoint.
 
 ## Authentication
 
