@@ -161,6 +161,11 @@ For the sake of the manual we are not going to impersonate different roles, but 
 
 A fact in this context is a key-value pair. MPFS imposes no semantics so you are free to pass a JSON string for both. In case of binary data some encoding could be necessary, MPFS is not supporting any at the moment.
 
+The request body field carrying the value depends on the operation: insert
+takes `newValue`, delete takes `oldValue`, and update takes both `oldValue` and
+`newValue` (these names changed in v1.1.0 — older `value` payloads no longer
+work).
+
 You can ask the owner to insert a fact with:
 
 ```bash
@@ -170,7 +175,7 @@ result=$(curl -s -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   "key": "exampleKey",
-  "value": "exampleValue"
+  "newValue": "exampleValue"
    }')
 echo $result | jq -r '.unsignedTransaction' > tmp/tx.cbor
 txId=$(sign_and_submit)
@@ -218,7 +223,7 @@ result=$(curl -s -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   "key": "exampleKey",
-  "value": "exampleValue"
+  "newValue": "exampleValue"
    }')
 echo $result | jq -r '.unsignedTransaction' > tmp/tx.cbor
 txId=$(sign_and_submit)
@@ -305,7 +310,7 @@ result=$(curl -s -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   "key": "exampleKey",
-  "value": "newExampleValue"
+  "oldValue": "newExampleValue"
    }')
 echo $result | jq -r '.unsignedTransaction' > tmp/tx.cbor
 txId=$(sign_and_submit)

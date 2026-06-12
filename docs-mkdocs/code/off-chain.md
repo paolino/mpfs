@@ -26,13 +26,15 @@ type Context = {
   fetchTokens: () => Promise<Token[]>;
   fetchToken: (tokenId: string) => Promise<CurrentToken | undefined>;
   fetchRequests: (tokenId: string | null) => Promise<Request[]>;
+  evaluate: (txHex: string) => Promise<any>;
   trie: (tokenId: string, f: (trie: SafeTrie) => Promise<any>) => Promise<void>;
   waitBlocks: (n: number) => Promise<number>;
   tips: () => Promise<{ networkTip, indexerTip }>;
   waitSettlement: (txHash: string) => Promise<string>;
+  facts: (tokenId: string) => Promise<Record<string, ValueSlotted>>;
   pauseIndexer: () => Promise<() => void>;
   submitTx: (txHex: string) => Promise<string>;
-  // ...
+  txInfo: (txHash: string) => Promise<any | null>;
 };
 ```
 
@@ -182,7 +184,7 @@ flowchart TB
         TxBuilder[Transaction Builder]
         Indexer[Chain Indexer]
         TrieManager[Trie Manager]
-        State[(SQLite State)]
+        State[(LevelDB State)]
     end
 
     subgraph External

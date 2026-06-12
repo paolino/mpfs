@@ -17,7 +17,7 @@ The MPFS service in itself is a TypeScript application so any Node.js supported 
 The image is available on ghcr.io and can be pulled with the command:
 
 ```bash
-docker pull ghcr.io/cardano-foundation/mpfs/mpfs:v1.1.0
+docker pull ghcr.io/cardano-foundation/mpfs/mpfs:v1.3.0
 ```
 
 This is an example of a working deployment: [mpfs in CF](https://github.com/cardano-foundation/hal/blob/main/docs/deployment/mpfs/docker-compose.yml)
@@ -30,7 +30,7 @@ Alternatively, you can run the service from source. To do so, you need to have N
 
 ```bash
 git clone https://github.com/cardano-foundation/mpfs
-cd off_chain
+cd mpfs/off_chain
 npm install
 npx tsx src/service/signingless/main.ts --port 3000 \
     --provider yaci --yaci-store-host http://localhost:8080 \
@@ -49,4 +49,3 @@ This will start the service on port 3000, using the Yaci store running on `http:
 
 - [Signingless API Reference](swagger-ui.md)
 - [Signingless Manual](manual/signingless.md)
-- [Signingful Manual](manual/signingful.md)
